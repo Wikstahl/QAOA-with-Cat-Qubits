@@ -83,19 +83,19 @@ class KPOProcessor(Processor):
             b = tensor([a if m == j else eye for j in range(N)])
 
             # Single photon drive Hamiltonian Z
-            self.add_control(b.dag() + b, targets = list(range(N)), label = "\sigma^z_%d" % m)
+            self.add_control(b.dag() + b, targets = list(range(N)), label = (r"\sigma^z_%d" % m))
 
             # Single photon drive Hamiltonian Y
-            self.add_control(1j*(b - b.dag()), targets = list(range(N)), label = ("\sigma^y_%d" % m))
+            self.add_control(1j*(b - b.dag()), targets = list(range(N)), label = (r"\sigma^y_%d" % m))
 
             # Two photon drive (TPD) Hamiltonian
-            self.add_control(self.G * (b.dag()**2 + b**2), label = ("F_%d" % m))
+            self.add_control(- self.G * (b.dag()**2 + b**2), label = (r"F_%d" % m))
 
             # Detuning
-            self.add_control(b.dag()*b, targets = list(range(N)), label = ("\sigma^x_%d" % m))
+            self.add_control(- b.dag()*b, targets = list(range(N)), label = (r"\sigma^x_%d" % m))
 
             # Qubit Hamiltonian
-            H_qubits += b.dag()**2 * b**2 - self.G * (b.dag()**2 + b**2)
+            H_qubits += - b.dag()**2 * b**2 + self.G * (b.dag()**2 + b**2)
 
             # Collapse operators
             self.c_ops.append(np.sqrt(self.gamma) * b)
@@ -109,7 +109,7 @@ class KPOProcessor(Processor):
                 for j in range(i+1,N):
                     b_2 = tensor([a if j == k else eye for k in range(N)])
                     H_cpl = b_1.dag()*b_2 + b_2.dag()*b_1
-                    self.add_control(H_cpl, targets = list(range(N)), label = ("\sigma^z_%d\sigma^z_%d" % (i,j)))
+                    self.add_control(H_cpl, targets = list(range(N)), label = (r"\sigma^z_%d\sigma^z_%d" % (i,j)))
 
     def load_circuit(self, qc):
         """

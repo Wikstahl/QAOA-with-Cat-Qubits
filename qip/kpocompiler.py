@@ -54,6 +54,7 @@ class KPOCompiler(GateCompiler):
         self.N = N
         self.alpha = self.params['Coherent state']
         self.labels = labels
+        self.dt = 0.001 # sets the time step
 
     def decompose(self, qc):
 
@@ -169,12 +170,15 @@ class KPOCompiler(GateCompiler):
             phi = args['phi']
             return np.pi*phi/(8*t_total*self.alpha)*np.sin(np.pi*t/t_total)
 
-        tlist = np.linspace(0,t_total,t_total*10+1)
+        #tlist = np.linspace(0,t_total,t_total*500+1)
+        tlist = np.linspace(0,t_total,int(np.ceil(t_total/self.dt)))
         dt_list = tlist[1:] - tlist[:-1]
         dt_list = np.append(dt_list,dt_list[0])
+        dt_list = int(np.ceil(t_total/self.dt))*[self.dt]
+        #print('Rz',dt_list[0])
         self.dt_list[idx].append(dt_list)
 
-        index = self.labels.index("\sigma^z_%d" % q)
+        index = self.labels.index(r"\sigma^z_%d" % q)
         self.coeff_list[index].append(list(E(tlist, args = {'phi': phi})))
 
     def ry_dec(self,gate,idx):
@@ -182,7 +186,7 @@ class KPOCompiler(GateCompiler):
         Compiler for the RY gate
         """
         q = gate.targets[0] # target qubit
-        phi = gate.arg_value % (np.pi) # argument
+        phi = gate.arg_value % (2*np.pi) # argument
         T_g = 2 # gate time of phase
         L = np.pi/2 # gate time H
         t_total = 2*L + T_g # total gate time
@@ -198,13 +202,16 @@ class KPOCompiler(GateCompiler):
             phi = args['phi']
             return np.pi*phi/(8*T_g*self.alpha)*np.sin(np.pi*(t-L)/T_g)*(np.heaviside(t-L,0)-np.heaviside(t-(T_g+L),0))
 
-        tlist = np.linspace(0,t_total,500)
+        #tlist = np.linspace(0,t_total,round(t_total*500)+1)
+        tlist = np.linspace(0,t_total,int(np.ceil(t_total/self.dt)))
         dt_list = tlist[1:] - tlist[:-1]
         dt_list = np.append(dt_list,dt_list[0])
+        dt_list = int(np.ceil(t_total/self.dt))*[self.dt]
+        print('Ry',dt_list[0])
         self.dt_list[idx].append(dt_list)
 
-        index1 = self.labels.index(("\sigma^y_%d" % q))
-        index2 = self.labels.index(("F_%d" % q))
+        index1 = self.labels.index((r"\sigma^y_%d" % q))
+        index2 = self.labels.index((r"F_%d" % q))
         self.coeff_list[index1].append(list(E(tlist, args = {'phi': phi})))
         self.coeff_list[index2].append(list(G(tlist)))
 
@@ -213,50 +220,50 @@ class KPOCompiler(GateCompiler):
         Compiler for the RX gate
         """
         q = gate.targets[0] # target qubit
-        theta = (gate.arg_value % (-np.pi)) # argument
+        theta = (gate.arg_value % (np.pi)) # argument
         t_total = 10 # total gate time
 
         theta_list =   [0.0,
                         0.0,
-                        -0.01755079694742901,
-                        -0.01755079694742901,
-                        -0.05265239084228703,
-                        -0.07020318778971604,
-                        -0.12285557863200308,
-                        -0.1755079694742901,
-                        -0.24571115726400616,
-                        -0.3334651420011512,
-                        -0.45632072063315426,
-                        -0.6142778931600154,
-                        -0.8073366595817345,
-                        -1.0179462229508827,
-                        -1.2812081771623178,
-                        -1.579571725268611,
-                        -1.930587664217191,
-                        -2.2991544001132005,
-                        -2.7203735268514966,
-                        -3.141592653589793]
+                        0.0,
+                        0.01755079694742901,
+                        0.05265239084228703,
+                        0.08775398473714505,
+                        0.12285557863200308,
+                        0.19305876642171912,
+                        0.26326195421143517,
+                        0.3510159389485802,
+                        0.47387151758058327,
+                        0.6142778931600154,
+                        0.8073366595817345,
+                        1.0179462229508827,
+                        1.2812081771623178,
+                        1.579571725268611,
+                        1.9130368672697622,
+                        2.3167051970606294,
+                        2.755475120746355,
+                        3.141592653589793]
 
         Delta_list =   [0.,
-                        0.13157895,
-                        0.26315789,
-                        0.39473684,
-                        0.52631579,
-                        0.65789474,
-                        0.78947368,
-                        0.92105263,
+                        0.21052632,
+                        0.42105263,
+                        0.63157895,
+                        0.84210526,
                         1.05263158,
-                        1.18421053,
-                        1.31578947,
-                        1.44736842,
-                        1.57894737,
-                        1.71052632,
-                        1.84210526,
-                        1.97368421,
+                        1.26315789,
+                        1.47368421,
+                        1.68421053,
+                        1.89473684,
                         2.10526316,
-                        2.23684211,
-                        2.36842105,
-                        2.5]
+                        2.31578947,
+                        2.52631579,
+                        2.73684211,
+                        2.94736842,
+                        3.15789474,
+                        3.36842105,
+                        3.57894737,
+                        3.78947368,
+                        4.]
 
         def find_le(a, x):
             'Find rightmost value less than or equal to x'
@@ -264,7 +271,7 @@ class KPOCompiler(GateCompiler):
             if i:
                 return i
             raise ValueError
-        z = find_le(np.abs(theta_list),abs(theta))
+        z = find_le(theta_list,theta)
 
         x1 = Delta_list[z-1]
         x2 = Delta_list[z]
@@ -273,16 +280,20 @@ class KPOCompiler(GateCompiler):
         y = theta
         x = (y-y1)*(x2-x1)/(y2-y1)+x1
         Delta0 = x
+
         # detuning
         def Delta(t,args):
             Delta0 = args['Delta0']
             return Delta0 * pow(np.sin(np.pi*t/t_total),2)
-
+        """
         tlist = np.linspace(0,t_total,t_total*10+1)
         dt_list = tlist[1:] - tlist[:-1]
         dt_list = np.append(dt_list,dt_list[0])
+        """
+        tlist = np.linspace(0,t_total,int(np.ceil(t_total/self.dt)))
+        dt_list = int(np.ceil(t_total/self.dt))*[self.dt]
         self.dt_list[idx].append(dt_list)
-        index = self.labels.index("\sigma^x_%d" % q)
+        index = self.labels.index(r"\sigma^x_%d" % q)
         self.coeff_list[index].append(list(Delta(tlist, args = {'Delta0': Delta0})))
 
     def carb_dec(self,gate,idx):
@@ -307,10 +318,13 @@ class KPOCompiler(GateCompiler):
             Theta = args['Theta']
             return np.pi*Theta/(8*t_total*pow(self.alpha,2))*np.sin(np.pi*t/t_total)
 
-        tlist = np.linspace(0,t_total,t_total*10+1)
+        #tlist = np.linspace(0,t_total,t_total*500+1)
+        tlist = np.linspace(0,t_total,int(np.ceil(t_total/self.dt)))
         dt_list = tlist[1:] - tlist[:-1]
         dt_list = np.append(dt_list,dt_list[0])
+        dt_list = int(np.ceil(t_total/self.dt))*[self.dt]
+        print('U',dt_list[0])
         self.dt_list[idx].append(dt_list)
 
-        index = self.labels.index("\sigma^z_%d\sigma^z_%d" % (targets[0], targets[1]))
+        index = self.labels.index(r"\sigma^z_%d\sigma^z_%d" % (targets[0], targets[1]))
         self.coeff_list[index].append(list(g(tlist, args = {'Theta': Theta})))
