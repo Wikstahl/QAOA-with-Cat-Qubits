@@ -53,143 +53,76 @@ class KPOCompiler(GateCompiler):
                              "CARB": self.carb_dec}
         self.N = N
         self.alpha = self.params['Coherent state']
-        self.labels = labels
-        self.dt = 0.001 # sets the time step
+        self.labels = labels # control labels
+        self.dt = 0.001 # time step
 
     def decompose(self, qc):
 
-        def qc_depth(qc):
-            """
-            Returns:
-                int: Depth of circuit.
-
-            Notes:
-                Based on this reference
-                https://quantumcomputing.stackexchange.com/questions/5769/how-to-calculate-circuit-depth-properly
-            """
-            N = qc.N
-            levels = [0] * N
-            gates = qc.gates
-            for gate in gates:
-                targets = []
-                for target in gate.targets:
-                    levels[target] += 1
-                    targets.append(target)
-                if gate.controls is not None:
-                    for control in gate.controls:
-                        levels[control] += 1
-                        targets.append(control)
-            max_level = max([levels[i] for i in targets])
-            return max_level
-
-        def qc_layers(self):
-            """
-            Returns:
-                int: Layers
-            """
-            layer = [[] for i in range(self.depth())] # replace this one
-            N = self.N
-            levels = [0] * N
-            gates = self.gates
-            for gate in gates:
-                targets = []
-                for target in gate.targets:
-                    levels[target] += 1
-                    targets.append(target)
-                if gate.controls is not None:
-                    for control in gate.controls:
-                        levels[control] += 1
-                        targets.append(control)
-                idx = max([levels[i] for i in targets])
-                for target in targets:
-                    if levels[target] < idx:
-                        levels[target] = idx
-                idx = max([levels[i] for i in targets])-1
-                layer[idx].append(gate)
-            return layer
-
         # TODO further improvement can be made here,
         # e.g. merge single qubit rotation gate, combine XX gates etc.
-        layers = qc_layers(qc)
-
-        self.dt_list = [[] for i in range(len(layers))]
         self.coeff_list = [[] for i in range(self.num_ops)]
+        self.tlist = self.N*[0] # time list for the qubits
 
-        temp = []
-
-        for layer_idx, layer in enumerate(layers):
-            for gate in layer:
-                if gate.name not in self.gate_decomps:
-                    raise ValueError("Unsupported gate %s" % gate.name)
-                else:
-                    self.gate_decomps[gate.name](gate,layer_idx)
-            coeff_len = 0
-
-            for i in range(self.num_ops):
-                try:
-                    if len(self.coeff_list[i][layer_idx]) > coeff_len:
-                        coeff_len = len(self.coeff_list[i][layer_idx])
-                except:
-                    0
-
-            for i in range(self.num_ops):
-                try:
-                    if len(self.coeff_list[i][layer_idx]) < coeff_len:
-                        self.coeff_list[i][layer_idx].extend([0] * (coeff_len-len(self.coeff_list[i][layer_idx])))
-                except:
-                    self.coeff_list[i].append([0] * coeff_len)
-
-            try:
-                temp.extend(max(self.dt_list[layer_idx], key = len)) # this is the time for layer 1
-            except:
-                0
-
-        tlist = np.empty(len(temp))
-        t = 0
-        for i in range(len(temp)):
-            tlist[i] = t
-            t += temp[i]
+        for gate in qc.gates:
+            if gate.name not in self.gate_decomps:
+                raise ValueError("Unsupported gate %s" % gate.name)
+            else:
+                self.gate_decomps[gate.name](gate)
 
         # Join sublists
         for i in range(self.num_ops):
             self.coeff_list[i] = np.array(sum(self.coeff_list[i], []))
 
-        coeffs = self.coeff_list
+        coeffs = np.zeros([len(self.coeff_list),len(max(self.coeff_list,key = lambda x: len(x)))])
+        for i,j in enumerate(self.coeff_list):
+            coeffs[i][0:len(j)] = j
+
+        tlist = np.arange(0, len(coeffs[0])*self.dt, self.dt)
         return tlist, coeffs
 
-    def rz_dec(self,gate,idx):
+    def rz_dec(self,gate):
         """
         Compiler for the RZ gate
         """
         q = gate.targets[0] # target qubit
         phi = gate.arg_value % (2*np.pi) # argument
+        index = self.labels.index(r"\sigma^z_%d" % q) # index of control
+
+        # Time
         t_total = 2 # total gate time
+        num_steps = int(np.ceil(t_total/self.dt)) # number of steps
+        tlist = np.linspace(0, t_total, num_steps)
 
         # single photon pump amplitude
         def E(t,args):
             phi = args['phi']
             return np.pi*phi/(8*t_total*self.alpha)*np.sin(np.pi*t/t_total)
 
-        #tlist = np.linspace(0,t_total,t_total*500+1)
-        tlist = np.linspace(0,t_total,int(np.ceil(t_total/self.dt)))
-        dt_list = tlist[1:] - tlist[:-1]
-        dt_list = np.append(dt_list,dt_list[0])
-        dt_list = int(np.ceil(t_total/self.dt))*[self.dt]
-        #print('Rz',dt_list[0])
-        self.dt_list[idx].append(dt_list)
+        # past time
+        len_coeff_list = len(np.array(self.coeff_list[index]).flatten())
+        t = self.dt * len_coeff_list
+        if self.tlist[q] > t:
+            self.coeff_list[index].append(int(np.ceil((self.tlist[q]-t)/self.dt)) * [0])
+            self.coeff_list[index].append(list(E(tlist, args = {'phi': phi})))
+        else:
+            self.coeff_list[index].append(list(E(tlist, args = {'phi': phi})))
 
-        index = self.labels.index(r"\sigma^z_%d" % q)
-        self.coeff_list[index].append(list(E(tlist, args = {'phi': phi})))
+        self.tlist[q] = self.tlist[q] + t_total
 
-    def ry_dec(self,gate,idx):
+    def ry_dec(self,gate):
         """
         Compiler for the RY gate
         """
         q = gate.targets[0] # target qubit
         phi = gate.arg_value % (2*np.pi) # argument
+
+        # Time
         T_g = 2 # gate time of phase
         L = np.pi/2 # gate time H
         t_total = 2*L + T_g # total gate time
+        num_steps = int(np.ceil(t_total/self.dt)) # number of steps
+        tlist = np.linspace(0, t_total, num_steps)
+        dt_list = num_steps * [self.dt]
 
         # two photon pump amplitude
         def G(t):
@@ -202,26 +135,33 @@ class KPOCompiler(GateCompiler):
             phi = args['phi']
             return np.pi*phi/(8*T_g*self.alpha)*np.sin(np.pi*(t-L)/T_g)*(np.heaviside(t-L,0)-np.heaviside(t-(T_g+L),0))
 
-        #tlist = np.linspace(0,t_total,round(t_total*500)+1)
-        tlist = np.linspace(0,t_total,int(np.ceil(t_total/self.dt)))
-        dt_list = tlist[1:] - tlist[:-1]
-        dt_list = np.append(dt_list,dt_list[0])
-        dt_list = int(np.ceil(t_total/self.dt))*[self.dt]
-        print('Ry',dt_list[0])
-        self.dt_list[idx].append(dt_list)
-
         index1 = self.labels.index((r"\sigma^y_%d" % q))
         index2 = self.labels.index((r"F_%d" % q))
-        self.coeff_list[index1].append(list(E(tlist, args = {'phi': phi})))
-        self.coeff_list[index2].append(list(G(tlist)))
 
-    def rx_dec(self,gate,idx):
+        # past time
+        len_coeff_list = len(np.array(self.coeff_list[index1]).flatten())
+        t = self.dt * len_coeff_list
+        if self.tlist[q] > t:
+            zeros = int(np.ceil((self.tlist[q]-t)/self.dt)) * [0]
+
+            self.coeff_list[index1].append(zeros + list(E(tlist, args = {'phi': phi})))
+            self.coeff_list[index2].append(zeros + list(G(tlist)))
+        else:
+            self.coeff_list[index1].append(list(E(tlist, args = {'phi': phi})))
+            self.coeff_list[index2].append(list(G(tlist)))
+
+        self.tlist[q] = self.tlist[q] + t_total
+
+
+    def rx_dec(self,gate):
         """
         Compiler for the RX gate
         """
         q = gate.targets[0] # target qubit
         theta = (gate.arg_value % (np.pi)) # argument
         t_total = 10 # total gate time
+        num_steps = int(np.ceil(t_total/self.dt)) # number of steps
+        tlist = np.linspace(0, t_total, num_steps)
 
         theta_list =   [0.0,
                         0.0,
@@ -285,24 +225,32 @@ class KPOCompiler(GateCompiler):
         def Delta(t,args):
             Delta0 = args['Delta0']
             return Delta0 * pow(np.sin(np.pi*t/t_total),2)
-        """
-        tlist = np.linspace(0,t_total,t_total*10+1)
-        dt_list = tlist[1:] - tlist[:-1]
-        dt_list = np.append(dt_list,dt_list[0])
-        """
-        tlist = np.linspace(0,t_total,int(np.ceil(t_total/self.dt)))
-        dt_list = int(np.ceil(t_total/self.dt))*[self.dt]
-        self.dt_list[idx].append(dt_list)
-        index = self.labels.index(r"\sigma^x_%d" % q)
-        self.coeff_list[index].append(list(Delta(tlist, args = {'Delta0': Delta0})))
 
-    def carb_dec(self,gate,idx):
+        index = self.labels.index(r"\sigma^x_%d" % q)
+        pulse_list = list(Delta(tlist, args = {'Delta0': Delta0}))
+
+        # past time
+        len_coeff_list = len(np.array(self.coeff_list[index]).flatten())
+        t = self.dt * len_coeff_list
+        if self.tlist[q] > t:
+            pulse_list = int(np.ceil((self.tlist[q]-t)/self.dt)) * [0] + pulse_list
+            self.coeff_list[index].append(pulse_list)
+        else:
+            self.coeff_list[index].append(pulse_list)
+
+        self.tlist[q] = self.tlist[q] + t_total
+
+
+    def carb_dec(self,gate):
         """
         Compiler for the CARB gate
         """
         targets = gate.targets # targets
         Theta = gate.arg_value % (2*np.pi) # argument
         t_total = 2 # total gate time
+        num_steps = int(np.ceil(t_total/self.dt)) # number of steps
+        tlist = np.linspace(0, t_total, num_steps)
+        dt_list = num_steps * [self.dt]
 
         q = 0
         for i in range(targets[0]):
@@ -316,15 +264,24 @@ class KPOCompiler(GateCompiler):
         # coupling
         def g(t,args):
             Theta = args['Theta']
-            return np.pi*Theta/(8*t_total*pow(self.alpha,2))*np.sin(np.pi*t/t_total)
-
-        #tlist = np.linspace(0,t_total,t_total*500+1)
-        tlist = np.linspace(0,t_total,int(np.ceil(t_total/self.dt)))
-        dt_list = tlist[1:] - tlist[:-1]
-        dt_list = np.append(dt_list,dt_list[0])
-        dt_list = int(np.ceil(t_total/self.dt))*[self.dt]
-        print('U',dt_list[0])
-        self.dt_list[idx].append(dt_list)
+            A = np.pi*Theta/(8*t_total*pow(self.alpha,2)) # amplitude
+            return A*np.sin(np.pi*t/t_total)
 
         index = self.labels.index(r"\sigma^z_%d\sigma^z_%d" % (targets[0], targets[1]))
-        self.coeff_list[index].append(list(g(tlist, args = {'Theta': Theta})))
+
+
+        len_coeff_list = len(np.array(self.coeff_list[index]).flatten())
+        t = self.dt*len_coeff_list
+        q0 = targets[0] # qubit zero
+        q1 = targets[1] # qubit one
+
+        tmax = max([self.tlist[q0],self.tlist[q1]])
+
+        if tmax > t:
+            w = int(np.ceil((tmax-t)/self.dt))
+            self.coeff_list[index].append(w*[0])
+            self.coeff_list[index].append(list(g(tlist, args = {'Theta': Theta})))
+        else:
+            self.coeff_list[index].append(list(g(tlist, args = {'Theta': Theta})))
+        self.tlist[q0] = tmax + t_total
+        self.tlist[q1] = tmax + t_total

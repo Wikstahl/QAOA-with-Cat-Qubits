@@ -261,6 +261,7 @@ class KPOProcessor(Processor):
         y_shift = 0
         for n, uu in enumerate(u):
             ax.plot(t,u[n],label=u_labels[n])
+            ax.fill_between(t, 0, u[n], alpha=0.2)
 
         ax.axis('tight')
         #ax.set_ylim(-1.5 * 2 * np.pi, 1.5 * 2 * np.pi)
