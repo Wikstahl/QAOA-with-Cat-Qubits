@@ -260,15 +260,16 @@ class KPOProcessor(Processor):
 
         y_shift = 0
         for n, uu in enumerate(u):
-            ax.plot(t,u[n],label=u_labels[n])
-            ax.fill_between(t, 0, u[n], alpha=0.2)
+            if np.any(u[n]): # Only plot non zero pulses
+                ax.plot(t,u[n],label=u_labels[n])
+                ax.fill_between(t, 0, u[n], alpha=0.2)
 
         ax.axis('tight')
         #ax.set_ylim(-1.5 * 2 * np.pi, 1.5 * 2 * np.pi)
         ax.legend(loc='center left',
                   bbox_to_anchor=(1, 0.5), ncol=(1 + len(u) // 16))
-        ax.set_ylabel("Control pulse amplitude (K)",fontsize=15)
-        ax.set_xlabel("Time (1/K)",fontsize=15)
+        ax.set_ylabel("Amplitude (K)")
+        ax.set_xlabel("Time (1/K)")
 
         if title is not None:
             ax.set_title(title)
