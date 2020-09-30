@@ -7,6 +7,10 @@ __pycache__/
 qcirc.png
 qcirc.pdf
 qcirc.tex
+test.npy
+
+# Folder
+data/
 
 # C extensions
 *.so
