@@ -6,12 +6,13 @@ from ptm.ptm import PTM
 from ptm.ptm import *
 import scipy.io as spio
 
+p = 2
 for i in range(10):
     filename = "instance_8_"+str(i+1)
     mat = spio.loadmat("instances/" + filename + ".mat")
     instance = mat['instance']
     cv_ptm = PTM()
-    for p in range(1):
-        gamma = instance['gamma'][0,0][0][p].flatten()
+    for k in range(p):
+        gamma = instance['gamma'][0,0][0][k].flatten()
         temp = cv_ptm.carb(gamma)
-        qsave(temp, "results/"+filename+"_carb_p_"+str(p+1)+"_1")
+        qsave(temp, "results/"+filename+"_carb_p_"+str(k+1)+"_2")
