@@ -11,8 +11,8 @@ for i in range(10):
     filename = "instance_8_"+str(i+1)
     mat = spio.loadmat("instances/" + filename + ".mat")
     instance = mat['instance']
+    gamma = instance['gamma'][0,0][0][p-1].flatten()
     cv_ptm = PTM()
-    for k in range(p):
-        gamma = instance['gamma'][0,0][0][k].flatten()
-        temp = cv_ptm.carb(gamma)
+    for k in range(1):
+        temp = cv_ptm.carb(gamma[k])
         qsave(temp, "results/"+filename+"_carb_p_"+str(k+1)+"_2")
