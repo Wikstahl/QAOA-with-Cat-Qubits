@@ -1,0 +1,4 @@
+qutip
+numpy
+scipy
+cython
