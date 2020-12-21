@@ -1,4 +1,5 @@
-qutip
 numpy
 scipy
 cython
+matplotlib
+qutip
