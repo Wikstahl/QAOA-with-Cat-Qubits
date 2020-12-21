@@ -6,7 +6,7 @@ import numpy as np
 from qutip import *
 from qutip.qip.circuit import QubitCircuit
 from qutip.qip.device.processor import Processor
-from qip.kpocompiler import KPOCompiler
+from .kpocompiler import KPOCompiler
 
 __all__ = ['KPOProcessor']
 

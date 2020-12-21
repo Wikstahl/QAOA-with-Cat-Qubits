@@ -9,8 +9,8 @@ from operator import mul
 import numpy as np; pi = np.pi
 from qutip import *
 
-__all__ = ['rho_to_pauli_basis','pauli_basis_to_rho', 'rz_ptm', 'rx_ptm',
-'carb_ptm','ptm_expand_1toN','ptm_expand_2toN']
+__all__ = ['PTM', 'rho_to_pauli_basis', 'pauli_basis_to_rho', 'rz_ptm', 'rx_ptm',
+'carb_ptm', 'ptm_expand_1toN', 'ptm_expand_2toN']
 
 def rho_to_pauli_basis(rho):
     """
