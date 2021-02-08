@@ -42,6 +42,9 @@ def pauli_basis_to_rho(rho):
     return Qobj(rho, dims=dims)
 
 def rz_ptm(arg_value):
+    """
+    The RZ-gate written in Pauli form
+    """
     d = 2
     pauli_basis = (qeye(2), sigmax(), sigmay(), sigmaz())
     rz = (-1j*arg_value/2*sigmaz()).expm()
@@ -52,6 +55,9 @@ def rz_ptm(arg_value):
     return Qobj(R, dims = [[2],[2]])
 
 def rx_ptm(arg_value):
+    """
+    The RX-gate written in Pauli form
+    """
     d = 2
     pauli_basis = (qeye(2), sigmax(), sigmay(), sigmaz())
     rx = (-1j*arg_value/2*sigmax()).expm()
@@ -62,6 +68,9 @@ def rx_ptm(arg_value):
     return Qobj(R, dims = [[2],[2]])
 
 def carb_ptm(arg_value):
+    """
+    The CARB-gate written in Pauli form
+    """
     d = 4
     pauli_basis = (qeye(2), sigmax(), sigmay(), sigmaz())
     pauli_basis = list(starmap(tensor,product(pauli_basis, repeat=2)))
@@ -164,24 +173,26 @@ class PTM(object):
     """docstring for ."""
 
     def __init__(self, num_lvl = 20):
-        self.num_lvl = num_lvl # number of levels
+        self.num_lvl = num_lvl  # number of levels
         # annihilation operators
         a = destroy(num_lvl)
         eye = qeye(num_lvl)
-        a1 = tensor([a,eye])
-        a2 = tensor([eye,a])
-        K = 1 # kerr amplitude
-        G = 4*K # two photon pump amplitude
-        self.alpha = np.sqrt(G/K) # coherent state amplitude
-        self.kappa = 1/1500 # single-photon loss rate
+        a1 = tensor([a, eye])
+        a2 = tensor([eye, a])
+        K = 1  # kerr amplitude
+        G = 4*K  # two photon pump amplitude
+        self.alpha = np.sqrt(G/K)  # coherent state amplitude
+        self.kappa = 1/1500  # single-photon loss rate
 
         # Single and two KNR collapse operators
         self.c_op = np.sqrt(self.kappa)*a
         self.c_ops = [np.sqrt(self.kappa)*a1, np.sqrt(self.kappa)*a2]
 
         # cat states
-        cat_plus = (coherent(num_lvl,self.alpha) + coherent(num_lvl,-self.alpha)).unit()
-        cat_minus = (coherent(num_lvl,self.alpha) - coherent(num_lvl,-self.alpha)).unit()
+        cat_plus = (coherent(num_lvl, self.alpha) +
+                    coherent(num_lvl, -self.alpha)).unit()
+        cat_minus = (coherent(num_lvl, self.alpha) -
+                     coherent(num_lvl, -self.alpha)).unit()
 
         # computational basis
         up = (cat_plus + cat_minus)/np.sqrt(2)
@@ -203,35 +214,35 @@ class PTM(object):
             Q.extend([tensor(P[i], P[j]) for j in range(4)])
         self.P = {'Single': P, 'Double': Q}
 
-
-        def E(t,args):
+        def E(t, args):
             arg_value = args['arg_value']
             T_g = args['T_g']
             return np.pi*arg_value/(8*T_g*self.alpha)*np.sin(np.pi*t/T_g)
 
         # detuning
-        def Delta(t,args):
+        def Delta(t, args):
             delta = args['delta']
             T_g = args['T_g']
             return delta * pow(np.sin(np.pi*t/T_g),2)
 
         # Hamiltonian
         H0 = - K * pow(a.dag(),2)*pow(a,2) + G * (pow(a.dag(),2) + pow(a,2))
+        self.H_I = [H0]
         self.H_RZ = [H0,[a.dag()+a,E]]
         self.H_RX = [H0,[-a.dag()*a, Delta]]
 
         # coupling
-        def g(t,args):
-            arg_value = args['arg_value']
+        def g(t, args):
+            arg_value = args['rg_value']
             T_g = args['T_g']
-            return np.pi*arg_value/(8*T_g*pow(self.alpha,2))*np.sin(np.pi*t/T_g)
+            return np.pi*arg_value/(8*T_g*pow(self.alpha, 2))*np.sin(np.pi*t/T_g)
 
         H1 = - K * pow(a1.dag(),2)*pow(a1,2) + G * (pow(a1.dag(),2) + pow(a1,2))
         H2 = - K * pow(a2.dag(),2)*pow(a2,2) + G * (pow(a2.dag(),2) + pow(a2,2))
         H_coupling = a1.dag()*a2 + a2.dag()*a1
         self.H_U = [(H1+H2),[H_coupling,g]] # Hamiltonian for the CARB-gate
 
-    def pauli_transfer_matrix(self, H_tot, d, T_g, args, opt):
+    def pauli_transfer_matrix(self, H_tot, d, T_g, args=None, opt=None):
         """
         Return the Pauli transfer matrix given a Hamiltonian
 
@@ -272,6 +283,26 @@ class PTM(object):
                 R[i,j] = 1/d * np.real((P[i]*Lambda).tr())
         R = Qobj(R, dims = [[2]*int(d/2), [2]*int(d/2)])
         return R
+    
+    def id(self, arg_value):
+        """
+        Return the Pauli transfer matrix of the identity
+
+        Parameters
+        ----------
+
+        arg_value: float
+            time
+
+        Returns
+        -------
+        Pauli transfer matrix: Qobj
+        """
+        T_g = arg_value
+        d = 2
+        H_tot = self.H_I
+        opt = Options(nsteps=1e4)  # For precise calculation
+        return self.pauli_transfer_matrix(H_tot, d, T_g, opt=opt)
 
     def rz(self, arg_value):
         """
@@ -296,7 +327,7 @@ class PTM(object):
 
     def rx(self, arg_value):
         """
-        Return the Pauli transfer matrix of the RZ-gate
+        Return the Pauli transfer matrix of the RX-gate
 
         Parameters
         ----------
