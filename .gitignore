@@ -4,12 +4,8 @@ __pycache__/
 *$py.class
 
 # Files
-qcirc.png
-qcirc.pdf
-qcirc.tex
-test.npy
 
-# Folder
+# Folders
 data/
 
 # C extensions
