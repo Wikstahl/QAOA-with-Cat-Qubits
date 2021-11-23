@@ -1,15 +1,7 @@
-from collections.abc import Iterable
-import warnings
-import numbers
-
 import numpy as np
 from qutip import *
-from qutip.qip.circuit import QubitCircuit
 from qutip.qip.device.processor import Processor
-from qip.qubitcompiler import QubitCompiler
-from qip.qubitnoise import QubitNoise
-from qutip.qip.noise import RandomNoise
-from qutip.qip.noise import DecoherenceNoise
+from .qubitcompiler import QubitCompiler
 
 __all__ = ['QubitProcessor']
 
@@ -20,9 +12,12 @@ class QubitProcessor(Processor):
 
     Parameters
     ----------
-    correct_global_phase: boolean, optional
-        If true, the analytical solution will track the global phase. It
-        has no effect on the numerical solution.
+    N: int
+        The number of qubits
+    t1: float-array
+        t1 times
+    t2: float-array
+        t2 time
 
     Attributes
     ----------
@@ -32,7 +27,7 @@ class QubitProcessor(Processor):
     """
 
     def __init__(self, N, t1=None, t2=None):
-        self.N = N # Number of qubits
+        self.N = N
         self.t1 = t1
         self.t2 = t2
         super(QubitProcessor, self).__init__(self.N,
@@ -129,7 +124,6 @@ class QubitProcessor(Processor):
         """
         if qc is not None:
             self.load_circuit(qc)
-
         return super(QubitProcessor, self).run_state(
             init_state=init_state, analytical=analytical,
             states=states, **kwargs)
