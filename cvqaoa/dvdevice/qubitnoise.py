@@ -1,20 +1,14 @@
 import numbers
 from collections.abc import Iterable
-from copy import deepcopy
 import numpy as np
-from numpy.random import normal
 
-from qutip.qobjevo import QobjEvo, EvoElement
-from qutip.qip.operations import expand_operator
-from qutip.qobj import Qobj
-from qutip.operators import sigmaz, destroy, identity
-from qutip.tensor import tensor
+from qutip.operators import sigmaz, destroy
 from qutip.qip.pulse import Pulse
-from qutip.qip.noise import Noise, UserNoise
+from qutip.qip.noise import Noise
 
 __all__ = ['QubitNoise']
 
-class QubitNoise(UserNoise):
+class QubitNoise(Noise):
     """
     The decoherence on each qubit characterized by two time scales t1 and t2.
 

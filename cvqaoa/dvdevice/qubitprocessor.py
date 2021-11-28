@@ -2,6 +2,7 @@ import numpy as np
 from qutip import *
 from qutip.qip.device.processor import Processor
 from .qubitcompiler import QubitCompiler
+from .qubitnoise import QubitNoise
 
 __all__ = ['QubitProcessor']
 
@@ -26,13 +27,12 @@ class QubitProcessor(Processor):
         in the physical realization, such as laser frequency, detuning etc.
     """
 
-    def __init__(self, N, t1=None, t2=None):
+    def __init__(self, N, T1=None, T2=None):
         self.N = N
-        self.t1 = t1
-        self.t2 = t2
-        super(QubitProcessor, self).__init__(self.N,
-                                             t1 = self.t1,
-                                             t2 = self.t2)
+        self.T1 = T1
+        self.T2 = T2
+        self.c_ops = []
+        super(QubitProcessor, self).__init__(self.N)
 
         # Create the control and drifts
         self.set_up_ops(N)
@@ -41,7 +41,8 @@ class QubitProcessor(Processor):
         """
         Generate the Hamiltonians and save them in the attribute `ctrls`.
         """
-
+        a = destroy(2)
+        eye = qeye(2)
         for m in range(N):
             self.add_control(1/2*sigmax(),
                              targets = [m], label=r"\sigma^x_%d" % m)
@@ -50,6 +51,23 @@ class QubitProcessor(Processor):
             self.add_control(1/2*sigmaz(),
                              targets = [m], label=r"\sigma^z_%d" % m)
 
+            if self.T1 is not None:
+                op = 1/np.sqrt(self.T1) * tensor([a if m == j else eye for j in range(N)])
+                self.c_ops.append(op)
+        
+            if self.t2 is not None:
+                # Keep the total dephasing ~ exp(-t/t2)
+                if self.T1 is not None:
+                    if 2*self.T1 < self.t2:
+                        raise ValueError(
+                            "t1={}, t2={} does not fulfill "
+                            "2*t1>t2".format(self.T1, self.t2))
+                    T2_eff = 1./(1./self.t2-1./2./self.T1)
+                else:
+                    T2_eff = self.t2
+                op = 1/np.sqrt(2*T2_eff) * tensor([sigmaz() if m == j else eye for j in range(N)])
+                self.c_ops.append(op)
+
         if N > 1:
             for i in range(N-1):
                 for j in range(i+1,N):
@@ -57,7 +75,6 @@ class QubitProcessor(Processor):
                     self.add_control(H_cpl,
                                      targets = [i,j],
                                      label = (r"\sigma^z_%d\sigma^z_%d" % (i,j)))
-
 
     def load_circuit(self, qc):
         """
@@ -124,6 +141,10 @@ class QubitProcessor(Processor):
         """
         if qc is not None:
             self.load_circuit(qc)
+        
+        if self.c_ops != []:
+            kwargs["c_ops"] = self.c_ops
+
         return super(QubitProcessor, self).run_state(
             init_state=init_state, analytical=analytical,
             states=states, **kwargs)
