@@ -277,13 +277,13 @@ class PTM(object):
         R = np.zeros((d**2,d**2))
         R[0,0] = 1
         for j in range(d**2):
-            rho = mesolve(H_tot, P[j], [0,T_g] , c_ops=c_ops, args = args, options = opt, progress_bar=True)
+            rho = mesolve(H_tot, P[j], [0,T_g] , c_ops=c_ops, args = args, options = opt, progress_bar = True)
             Lambda = rho.states[-1]
             for i in range(1,d**2):
                 R[i,j] = 1/d * np.real((P[i]*Lambda).tr())
         R = Qobj(R, dims = [[2]*int(d/2), [2]*int(d/2)])
         return R
-    
+
     def id(self, arg_value):
         """
         Return the Pauli transfer matrix of the identity
@@ -301,7 +301,7 @@ class PTM(object):
         T_g = arg_value
         d = 2
         H_tot = self.H_I
-        opt = Options(nsteps=1e4)  # For precise calculation
+        opt = Options(nsteps=1e5)  # For precise calculation
         return self.pauli_transfer_matrix(H_tot, d, T_g, opt=opt)
 
     def rz(self, arg_value):
@@ -344,7 +344,6 @@ class PTM(object):
         theta = arg_value % np.pi
         theta_list = np.load("results/theta-list.npy")
         delta_list = np.load("results/delta-list.npy")
-
 
         def find_le(a, x):
             'Find rightmost value less than or equal to x'
