@@ -13,7 +13,7 @@ __all__ = ['KPOProcessor']
 class KPOProcessor(Processor):
     """
     The processor based on the physical implementation of
-    a ETH processor.
+    a Kerr Nonlinear Resonator (KNR).
     The available Hamiltonian of the system is predefined.
     For a given pulse amplitude matrix, the processor can
     calculate the state evolution under the given control pulse,
@@ -188,18 +188,54 @@ class KPOProcessor(Processor):
             init_state = tensor([coherent(self.num_lvl,self.alpha) for i in range(self.N)])
 
         if noisy == True:
-            kwargs = {'c_ops': self.c_ops}
+            kwargs["c_ops"] = self.c_ops
 
         return super(KPOProcessor, self).run_state(
             init_state=init_state, analytical=analytical,
             states=states, **kwargs)
+    
+    def run_propagator(self, qc=None, **kwargs):
+        """
+
+        Parameters
+        ----------
+        qc: :class:`qutip.qip.QubitCircuit`, optional
+            A quantum circuit. If given, it first calls the ``load_circuit``
+            and then calculate the evolution.
+
+        states: :class:`qutip.Qobj`, optional
+         Old API, same as init_state.
+
+        **kwargs
+           Keyword arguments for the qutip solver.
+
+        Returns
+        -------
+        evo_result: :class:`qutip.Result`
+            If ``analytical`` is False,  an instance of the class
+            :class:`qutip.Result` will be returned.
+
+            If ``analytical`` is True, a list of matrices representation
+            is returned.
+        """
+        if qc is not None:
+            self.load_circuit(qc)
+
+        # construct qobjevo for unitary evolution
+        noisy_qobjevo = self.get_qobjevo()
+
+        evo_result = propagator(
+            noisy_qobjevo.to_list(), noisy_qobjevo.tlist, c_op_list=self.c_ops, **kwargs)
+        return evo_result
+
+        #return super(KPOProcessor, self).run_propagator(**kwargs)
 
     def get_ops_labels(self):
         """
         Get the labels for each control Hamiltonian.
         """
         labels = []
-        for i, pulse in enumerate(self.pulses):
+        for _, pulse in enumerate(self.pulses):
             labels.append(r"$" + pulse.label + "$")
         return labels
 
