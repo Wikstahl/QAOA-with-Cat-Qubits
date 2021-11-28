@@ -45,16 +45,16 @@ class KPOCompiler(GateCompiler):
         Record of the global phase change and will be returned.
     """
     def __init__(self, N, params, num_ops, labels):
-        super(KPOCompiler, self).__init__(
-            N=N, params=params, num_ops=num_ops)
+        #super(KPOCompiler, self).__init__(N=N, params=params, num_ops = num_ops)
         self.gate_decomps = {"RZ": self.rz_dec,
                              "RX": self.rx_dec,
                              "RY": self.ry_dec,
                              "CARB": self.carb_dec}
         self.N = N
-        self.alpha = self.params['Coherent state']
+        self.num_ops = num_ops
+        self.alpha = params['Coherent state']
         self.labels = labels # control labels
-        self.dt = 0.001 # time step
+        self.dt = 0.01 # time step
 
     def decompose(self, qc):
 
@@ -85,7 +85,10 @@ class KPOCompiler(GateCompiler):
         Compiler for the RZ gate
         """
         q = gate.targets[0] # target qubit
-        phi = gate.arg_value % (2*np.pi) # argument
+        if gate.arg_value >= 0: 
+            phi = gate.arg_value % (2*np.pi) # argument
+        elif gate.arg_value < 0:
+            phi = gate.arg_value % (-2*np.pi) # argument
         index = self.labels.index(r"\sigma^z_%d" % q) # index of control
 
         # Time
