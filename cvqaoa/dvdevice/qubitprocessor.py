@@ -15,10 +15,10 @@ class QubitProcessor(Processor):
     ----------
     N: int
         The number of qubits
-    t1: float-array
-        t1 times
-    t2: float-array
-        t2 time
+    T1: float-array
+        T1 times
+    T2: float-array
+        T2 time
 
     Attributes
     ----------
@@ -55,16 +55,16 @@ class QubitProcessor(Processor):
                 op = 1/np.sqrt(self.T1) * tensor([a if m == j else eye for j in range(N)])
                 self.c_ops.append(op)
         
-            if self.t2 is not None:
+            if self.T2 is not None:
                 # Keep the total dephasing ~ exp(-t/t2)
                 if self.T1 is not None:
-                    if 2*self.T1 < self.t2:
+                    if 2*self.T1 < self.T2:
                         raise ValueError(
                             "t1={}, t2={} does not fulfill "
-                            "2*t1>t2".format(self.T1, self.t2))
-                    T2_eff = 1./(1./self.t2-1./2./self.T1)
+                            "2*t1>t2".format(self.T1, self.T2))
+                    T2_eff = 1./(1./self.T2-1./2./self.T1)
                 else:
-                    T2_eff = self.t2
+                    T2_eff = self.T2
                 op = 1/np.sqrt(2*T2_eff) * tensor([sigmaz() if m == j else eye for j in range(N)])
                 self.c_ops.append(op)
 
