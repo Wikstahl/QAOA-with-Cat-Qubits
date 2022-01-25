@@ -3,3 +3,6 @@ scipy
 cython
 matplotlib
 qutip
+networkx
+cirq
+seaborn
