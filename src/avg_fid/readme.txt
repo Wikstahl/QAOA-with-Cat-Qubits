@@ -1,0 +1,1 @@
+The cv_avg_fid_[gate].py files calculates the average gate fidelity for multiples angles given by arg_list
