@@ -6,6 +6,7 @@ from .qubitnoise import QubitNoise
 
 __all__ = ['QubitProcessor']
 
+
 class QubitProcessor(Processor):
     """
     The processor based on the physical implementation of
@@ -37,44 +38,47 @@ class QubitProcessor(Processor):
         # Create the control and drifts
         self.set_up_ops(N)
 
-    def set_up_ops(self,N):
+    def set_up_ops(self, N):
         """
         Generate the Hamiltonians and save them in the attribute `ctrls`.
         """
         a = destroy(2)
         eye = qeye(2)
         for m in range(N):
-            self.add_control(1/2*sigmax(),
-                             targets = [m], label=r"\sigma^x_%d" % m)
-            self.add_control(1/2*sigmay(),
-                             targets = [m], label=r"\sigma^y_%d" % m)
-            self.add_control(1/2*sigmaz(),
-                             targets = [m], label=r"\sigma^z_%d" % m)
+            self.add_control(1 / 2 * sigmax(),
+                             targets=[m], label=r"\sigma^x_%d" % m)
+            self.add_control(1 / 2 * sigmay(),
+                             targets=[m], label=r"\sigma^y_%d" % m)
+            self.add_control(1 / 2 * sigmaz(),
+                             targets=[m], label=r"\sigma^z_%d" % m)
 
             if self.T1 is not None:
-                op = 1/np.sqrt(self.T1) * tensor([a if m == j else eye for j in range(N)])
+                op = 1 / np.sqrt(self.T1) * \
+                    tensor([a if m == j else eye for j in range(N)])
                 self.c_ops.append(op)
-        
+
             if self.T2 is not None:
                 # Keep the total dephasing ~ exp(-t/t2)
                 if self.T1 is not None:
-                    if 2*self.T1 < self.T2:
+                    if 2 * self.T1 < self.T2:
                         raise ValueError(
                             "t1={}, t2={} does not fulfill "
                             "2*t1>t2".format(self.T1, self.T2))
-                    T2_eff = 1./(1./self.T2-1./2./self.T1)
+                    T2_eff = 1. / (1. / self.T2 - 1. / 2. / self.T1)
                 else:
                     T2_eff = self.T2
-                op = 1/np.sqrt(2*T2_eff) * tensor([sigmaz() if m == j else eye for j in range(N)])
+                op = 1 / \
+                    np.sqrt(2 * T2_eff) * \
+                    tensor([sigmaz() if m == j else eye for j in range(N)])
                 self.c_ops.append(op)
 
         if N > 1:
-            for i in range(N-1):
-                for j in range(i+1,N):
-                    H_cpl = 1/2*tensor(sigmaz(),sigmaz())
+            for i in range(N - 1):
+                for j in range(i + 1, N):
+                    H_cpl = 1 / 2 * tensor(sigmaz(), sigmaz())
                     self.add_control(H_cpl,
-                                     targets = [i,j],
-                                     label = (r"\sigma^z_%d\sigma^z_%d" % (i,j)))
+                                     targets=[i, j],
+                                     label=(r"\sigma^z_%d\sigma^z_%d" % (i, j)))
 
     def load_circuit(self, qc):
         """
@@ -97,9 +101,9 @@ class QubitProcessor(Processor):
             one Hamiltonian.
         """
 
-        dec = QubitCompiler(N = self.N,
-                            num_ops = len(self.ctrls),
-                            pulses = self.pulses)
+        dec = QubitCompiler(N=self.N,
+                            num_ops=len(self.ctrls),
+                            pulses=self.pulses)
         dec.decompose(qc)
 
     def run_state(self, init_state=None, analytical=False, qc=None,
@@ -141,7 +145,7 @@ class QubitProcessor(Processor):
         """
         if qc is not None:
             self.load_circuit(qc)
-        
+
         if self.c_ops != []:
             kwargs["c_ops"] = self.c_ops
 
@@ -189,9 +193,9 @@ class QubitProcessor(Processor):
         dt = tlist[1] - tlist[0]
         t_tot = tlist[-1]
         n_t = len(tlist)
-        n_ops = len(H_ops) # Number of controls = 2
+        n_ops = len(H_ops)  # Number of controls = 2
 
-        #t = np.linspace(0, t_tot, n_t) # len(t) = len(tlist)
+        # t = np.linspace(0, t_tot, n_t) # len(t) = len(tlist)
         t = tlist
         u = H_u.T
         #u = np.zeros((n_ops, n_t))
@@ -215,8 +219,8 @@ class QubitProcessor(Processor):
 
         y_shift = 0
         for n, uu in enumerate(u):
-            if np.any(u[n]): # Only plot non zero pulses
-                ax.plot(t,u[n],label=u_labels[n])
+            if np.any(u[n]):  # Only plot non zero pulses
+                ax.plot(t, u[n], label=u_labels[n])
                 ax.fill_between(t, 0, u[n], alpha=0.2)
 
         ax.axis('tight')
