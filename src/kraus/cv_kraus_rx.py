@@ -32,17 +32,6 @@ sigma = [I, sigma_x, sigma_y, sigma_z]
 # qubit Paulis
 P = [qeye(2), sigmax(), sigmay(), sigmaz()]
 
-# A matrix
-A = np.zeros((4, 4, 4, 4), dtype='complex')
-for i in range(4):
-    for j in range(4):
-        for m in range(4):
-            for n in range(4):
-                A[i, j, m, n] = (sigma[i] * sigma[m] *
-                                 sigma[j] * sigma[n]).tr()
-A = A.reshape((16, 16))
-A_inv = np.linalg.inv(A)
-
 # Angle of rotation
 arg_list = np.linspace(0, np.pi, num=181, endpoint=False)
 
@@ -76,18 +65,29 @@ for idx, arg in enumerate(arg_list):
     ptm_error = R@np.linalg.inv(R_inv)
 
     # Convert PTM to choi
-    rho = 1 / d**2 * sum((ptm_error[i, j] * tensor(P[i].trans(), P[j]))
+    choi = 1 / d**2 * sum((ptm_error[i, j] * tensor(P[j].trans(), P[i]))
                          for i in range(d**2) for j in range(d**2))
-    choi = Qobj(rho.full(), dims=[[[2], [2]], [[2], [2]]], superrep='choi')
+    choi.dims = [[[2, 2], [2, 2]], [[2, 2], [2, 2]]]
+    choi.superrep = 'choi'
 
-    # Convert choi to kraus. Each kraus needs to be scaled by a factor sqrt(d)
-    kraus = [np.sqrt(d) * k for k in choi_to_kraus(choi)]
+    # Find eigenvectors and eigenvalues to choi
+    eValues, eVectors = np.linalg.eigh(choi)
+    # Because of machine impressision we drop terms smaller than rtol
+    rtol = 1e-6
+    idx, = np.where(eValues < rtol)
+    eVectors = np.delete(eVectors, idx, axis=1)  # drop columns
+    eValues = np.delete(eValues, idx)
+    num = len(eValues)
+    # Get the Kraus operators
+    kraus = [np.sqrt(d * eValues[i]) * eVectors[:, i].reshape((d, d))
+             for i in range(num)]
 
     # Identity
-    id = sum(k * k.dag() for k in kraus)
+    id = sum(k@np.conj(k.T) for k in kraus)
 
     # Check that the kraus sum to identity
-    if np.isclose(id, qeye(2), rtol=1e-5, atol=1e-5).all() != True:
+    if np.isclose(id, np.eye(2), rtol=1e-4, atol=1e-4).all() != True:
+        print(id)
         raise 'Kraus operators must sum to identity'
 
     # Append kraus to list
