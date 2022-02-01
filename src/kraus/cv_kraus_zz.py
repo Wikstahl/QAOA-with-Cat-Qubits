@@ -80,9 +80,6 @@ choi = 1 / d**2 * sum((ptm_error[i, j] * tensor(P[j].trans(), P[i]))
 choi.dims = [[[2, 2], [2, 2]], [[2, 2], [2, 2]]]
 choi.superrep = 'choi'
 
-choi = Qobj(rho, dims=[[[2, 2], [2, 2]],
-                       [[2, 2], [2, 2]]], superrep='choi')
-
 # Find eigenvectors and eigenvalues to choi
 eValues, eVectors = np.linalg.eigh(choi)
 # Because of machine impressision we drop terms smaller than rtol
@@ -99,7 +96,8 @@ kraus = [np.sqrt(d * eValues[i]) * eVectors[:, i].reshape((d, d))
 id = sum(k@np.conj(k.T) for k in kraus)
 # check that the kraus sum to identity
 if np.isclose(id, np.eye(4), rtol=1e-3, atol=1e-3).all() != True:
-    raise 'Kraus operators must sum to identity'
+    print('Kraus operators must sum to identity')
+    #raise 'Kraus operators must sum to identity'
 
 # Save results
 file = '../../data/kraus/cv_kraus_zz.npz'

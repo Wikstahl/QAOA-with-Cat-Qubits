@@ -6,7 +6,7 @@ from qutip.qip.circuit import QubitCircuit
 from cvqaoa.cvdevice import KPOProcessor
 
 # KPO parameters
-kpo = KPOProcessor(N=1, num_lvl=20)
+kpo = KPOProcessor(N=1, num_lvl=12)
 alpha = kpo._paras['Coherent state']
 num_lvl = kpo._paras['Cut off']
 
@@ -33,7 +33,7 @@ sigma = [I, sigma_x, sigma_y, sigma_z]
 P = [qeye(2), sigmax(), sigmay(), sigmaz()]
 
 # Angle of rotation
-arg_list = np.linspace(0, np.pi, num=181, endpoint=False)
+arg_list = np.linspace(0, np.pi, num=3, endpoint=False)
 
 # Dimension
 d = 2
@@ -93,6 +93,7 @@ for idx, arg in enumerate(arg_list):
     # Append kraus to list
     kraus_list.append(kraus)
 
+kraus_list = np.asanyarray(kraus_list)
 # Save results
 file = '../../data/kraus/cv_kraus_rx.npz'
 np.savez(file, args=arg_list, kraus=kraus_list)
