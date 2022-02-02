@@ -100,5 +100,5 @@ if np.isclose(id, np.eye(4), rtol=1e-3, atol=1e-3).all() != True:
     #raise 'Kraus operators must sum to identity'
 
 # Save results
-file = '../../data/kraus/cv_kraus_zz.npz'
+file = '../../data/kraus/cv_kraus_zz'
 np.save(file, kraus)
