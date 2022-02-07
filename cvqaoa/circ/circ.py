@@ -1,152 +1,154 @@
 from typing import Iterable
-import numpy
 import networkx
+import numpy
 import cirq
+import os
+from cvqaoa.circ.noise import *
 
-__all__ = ['CVRZChannel', 'CVRXChannel', 'DVRXChannel', 'DVZZChannel']
-
-
-class Location():
-    def __init__(self) -> None:
-        self.loc = '../data/kraus/'
+__all__ = ['Circ']
 
 
-class CVRZChannel(cirq.SingleQubitGate, Location):
-    def __init__(self) -> None:
-        super().__init__()
-        file = self.loc + 'cv_kraus_rz.npy'
-        self.kraus = numpy.load(file, allow_pickle=True, fix_imports=True)
+class Circ(object):
+    def __init__(self, graph: networkx.Graph) -> None:
+        """Init
 
-    def num_qubits(self) -> int:
-        return 1
+        Args:
+            graph (networkx.Graph): A Max-Cut graph
+        """
+        self.graph = graph
+        self.num_nodes = len(graph.nodes)
+        self.num_edges = len(graph.edges)
+        self.cost = self.get_cost()
 
-    def _kraus_(self) -> Iterable[numpy.ndarray]:
-        return self.kraus
+    def get_cost(self) -> numpy.ndarray:
+        """
+        The MaxCut cost values of a graph
 
-    def _has_mixture_(self) -> bool:
-        return False
+        Returns:
+            numpy.ndarray: The cost values as an 1D-array
+        """
+        def product(*args, repeat=1):
+            # product('ABCD', 'xy') --> Ax Ay Bx By Cx Cy Dx Dy
+            # product(range(2), repeat=3) --> 000 001 010 011 100 101 110 111
+            pools = [list(pool) for pool in args] * repeat
+            result = [[]]
+            for pool in pools:
+                result = [x + [y] for x in result for y in pool]
+            for prod in result:
+                yield list(prod)
 
-    def _has_kraus_(self) -> bool:
-        return True
+        # Number of edges
+        M = self.num_edges
+        # Number of nodes
+        N = self.num_nodes
+        # Adjacency matrix
+        A = networkx.adjacency_matrix(self.graph).todense()
 
-    def _circuit_diagram_info_(self, arg) -> str:
-        return f"DZ"
+        # Generate a list of all possible n‐tuples of elements from {1,-1} and
+        # organize them as a (2^n x n) matrix. In other words create all
+        # possible solutions to the problem.
+        s = numpy.array(list(product([1, -1], repeat=N)))
 
+        # Construct the the cost function for Max Cut: C=1/2*Sum(Z_i*Z_j)-M/2
+        # Note: This is the minimization version
+        return 1 / 2 * (numpy.diag(s@numpy.triu(A)@s.T) - M)
 
-class CVRXChannel(cirq.SingleQubitGate, Location):
-    def __init__(self, arg: float) -> None:
-        super().__init__()
-        self.arg = arg % numpy.pi
-        file = self.loc + 'cv_kraus_rx.npy'
-        self.kraus = numpy.load(file, allow_pickle=True, fix_imports=True)
+    def qaoa_circuit(self,
+                     params: tuple,
+                     device: str) -> cirq.Circuit:
+        """Creates the first iteration of the QAOA circuit
 
-    def num_qubits(self) -> int:
-        return 1
+        Args:
 
-    def _kraus_(self) -> Iterable[numpy.ndarray]:
-        # Angle of rotation
-        arg = self.arg
+        Returns:
+            cirq.Circuit: QAOA circuit
+        """
 
-        # This was the list used for creating the Kraus operators for
-        # a given angle
-        arg_list = numpy.linspace(0, numpy.pi, num=181, endpoint=False)
+        # The rotation angles in the QAOA circuit.
+        alphas, betas = params
 
-        # Find elem in arg_list that arg is the closest too
-        def absolute_difference_function(
-            list_value): return abs(list_value - arg)
-        closest_value = min(arg_list, key=absolute_difference_function)
+        qubits = cirq.LineQubit.range(self.num_nodes)  # Create qubits
 
-        # Find the corresponding index
-        idx = int(numpy.where(arg_list == closest_value)[0])
+        circuit = cirq.Circuit()  # Initialize circuit
+        circuit.append(cirq.H(q) for q in qubits)  # Add Hadamard
 
-        # Get the kraus
-        kraus = self.kraus[idx]
-        return kraus
+        for alpha, beta in zip(alphas, betas):
+            for (u, v) in self.graph.edges:
+                circuit.append(cirq.ops.ZZPowGate(
+                    exponent=(alpha / numpy.pi),
+                    global_shift=-.5)(qubits[u], qubits[v])
+                )
+                if device == "DV":
+                    circuit.append(DVZZChannel(alpha)(qubits[u], qubits[v]))
+                elif device == "CV":
+                    circuit.append(CVZZChannel()(qubits[u], qubits[v]))
+                else:
+                    raise "Unknown device"
 
-    def _has_mixture_(self) -> bool:
-        return False
+            circuit.append(
+                cirq.Moment(
+                    # This gate is equivalent to the RX-gate
+                    # That is why we multiply by two in the exponent
+                    cirq.ops.XPowGate(
+                        exponent=(2 * beta / numpy.pi),
+                        global_shift=-.5)(q) for q in qubits
+                )
+            )
+            if device == "DV":
+                circuit.append(DVRXChannel(beta).on_each(*qubits))
+            elif device == "CV":
+                circuit.append(CVRXChannel(beta).on_each(*qubits))
 
-    def _has_kraus_(self) -> bool:
-        return True
+        return circuit
 
-    def _circuit_diagram_info_(self, arg) -> str:
-        return f"DX^{self.arg}"
+    def simulate_qaoa(self,
+                      params: tuple,
+                      device: str) -> numpy.ndarray:
+        """Simulates the p=1 QAOA circuit of a graph
 
+        Args:
+            params (tuple): Variational parameters
+            device (str): CV or DV device
 
-class DVRXChannel(cirq.SingleQubitGate, Location):
-    def __init__(self, arg: float) -> None:
-        super().__init__()
-        file = self.loc + 'dv_kraus_rx.npy'
-        self.kraus = numpy.load(file, allow_pickle=True, fix_imports=True)
-        self.arg = arg % numpy.pi
+        Returns:
+            numpy.ndarray: Density matrix output
+        """
+        alpha, beta = params
+        circuit = self.qaoa_circuit(params, device)
 
-    def num_qubits(self) -> int:
-        return 1
+        # prepare initial state |00...0>
+        initial_state = numpy.zeros(2**self.num_nodes)
+        initial_state[0] = 1
 
-    def _kraus_(self) -> Iterable[numpy.ndarray]:
-        arg = self.arg
+        # Density matrix simulator
+        sim = cirq.DensityMatrixSimulator(
+            split_untangled_states=True
+        )
 
-        # This was the list used for creating the Kraus operators for
-        # a given angle
-        arg_list = numpy.linspace(0, numpy.pi, num=181, endpoint=False)
+        # Simulate the QAOA
+        result = sim.simulate(
+            circuit,
+            initial_state=initial_state,
+            qubit_order=cirq.LineQubit.range(self.num_nodes)
+        )
+        return result.final_density_matrix
 
-        # Find elem in arg_list that arg is the closest too
-        def absolute_difference_function(
-            list_value): return abs(list_value - arg)
-        closest_value = min(arg_list, key=absolute_difference_function)
+    def optimize_qaoa(self, x: tuple, *args: tuple) -> float:
+        """Optimization function for QAOA that is compatible with
+            Scipy optimize.
 
-        # Find the corresponding index
-        idx = int(numpy.where(arg_list == closest_value)[0])
-
-        # Get the kraus
-        kraus = self.kraus[idx]
-        return kraus
-
-    def _has_mixture_(self) -> bool:
-        return False
-
-    def _has_kraus_(self) -> bool:
-        return True
-
-    def _circuit_diagram_info_(self, args) -> str:
-        return f"DX^{self.arg}"
-
-
-class DVZZChannel(cirq.Gate, Location):
-    def __init__(self, arg) -> None:
-        super().__init__()
-        file = self.loc + 'dv_kraus_zz.npy'
-        self.kraus = numpy.load(file, allow_pickle=True, fix_imports=True)
-        self.arg = arg % numpy.pi
-
-    def num_qubits(self) -> int:
-        return 2
-
-    def _kraus_(self) -> Iterable[numpy.ndarray]:
-        arg = self.arg
-
-        # This was the list used for creating the Kraus operators for
-        # a given angle
-        arg_list = numpy.linspace(0, numpy.pi, num=181, endpoint=False)
-
-        # Find elem in arg_list that arg is the closest too
-        def absolute_difference_function(
-            list_value): return abs(list_value - arg)
-        closest_value = min(arg_list, key=absolute_difference_function)
-
-        # Find the corresponding index
-        idx = int(numpy.where(arg_list == closest_value)[0])
-
-        # Get the kraus
-        kraus = self.kraus[idx]
-        return kraus
-
-    def _has_mixture_(self) -> bool:
-        return False
-
-    def _has_kraus_(self) -> bool:
-        return True
-
-    def _circuit_diagram_info_(
-            self, args: 'cirq.CircuitDiagramInfoArgs') -> 'cirq.CircuitDiagramInfo':
-        return cirq.protocols.CircuitDiagramInfo(wire_symbols=('DZZ', f"DZZ^{self.arg}"))
+        Args:
+            x (tuple): Variational parameters
+            *args (tuple): Error Channel
+        Returns:
+            float: Expectation value
+        """
+        middle_index = int(len(x) / 2)
+        alphas = tuple(x[:middle_index])
+        betas = tuple(x[middle_index:])
+        device = args[0]
+        rho = self.simulate_qaoa(
+            params=(alphas, betas),
+            device=device
+        )
+        return numpy.trace(self.cost * rho).real
