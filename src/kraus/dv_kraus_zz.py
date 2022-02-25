@@ -25,9 +25,8 @@ tau = 2  # gate time
 file = np.load('../../data/average_gate_fidelity/cv_avg_fid_zz.npz')
 f_bar = np.mean(file['avg'])
 # Find the corresponding T1
-gamma = 2 * (d + 1) / (d * tau) * (1 - f_bar)
+gamma = (d + 1) / (d * tau) * (1 - f_bar)
 T1 = 1 / (gamma)
-print('T1', T1)
 # Qubit Processor
 qp = QubitProcessor(N=N, T1=T1)
 qp_inv = QubitProcessor(N=N, T1=None)

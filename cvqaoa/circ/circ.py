@@ -1,11 +1,54 @@
 from typing import Iterable
+from itertools import product
 import networkx
 import numpy
 import cirq
 import os
 from cvqaoa.circ.noise import *
+from qutip import tensor, qeye, sigmax, sigmay, sigmaz
 
-__all__ = ['Circ']
+__all__ = ['Circ', 'average_gate_fidelity']
+
+def average_gate_fidelity(circuit:cirq.Circuit, U:numpy.ndarray) -> float:
+
+    # List with the qubits
+    qubits = list(circuit.all_qubits())
+    # Number of qubits
+    num_q = len(qubits)
+    # Dimension
+    d = 2**num_q
+
+    # All Pauli matrices including the identity
+    sigma_list = [qeye(2), sigmax(), sigmay(), sigmaz()]
+
+    # List with all Pauli matrices
+    sigma = map(tensor, map(list, product(sigma_list, repeat=num_q)))
+
+    # Simulator
+    sim = cirq.DensityMatrixSimulator(dtype = numpy.complex128)
+
+    # Average Gate Fidelity
+    F = 0
+    for sigma_k in sigma:
+        sigma_k = numpy.array(sigma_k.full())
+        # Get eigenvalues and eigenvectors
+        eVal, eVec = numpy.linalg.eigh(sigma_k)
+        # Quantum map
+        final_state = 0
+        for w, v in zip(eVal, eVec.T):
+            v = numpy.reshape(v,(d,1)) # reshape to a column vector
+            input_state = v@numpy.conj(v.T) # input density matrix
+            # Simulate circuit
+            result = sim.simulate(
+                circuit,
+                initial_state=input_state,
+                qubit_order=qubits
+            )
+            final_state += w*result.final_density_matrix
+        # Target state
+        target_state = U@sigma_k@numpy.conj(U.T)
+        F += numpy.trace(target_state@final_state).real
+    return (F + d**2) / (d**2*(d + 1))
 
 
 class Circ(object):
