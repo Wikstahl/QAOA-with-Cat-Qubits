@@ -176,9 +176,8 @@ class Circ(object):
         )
         return result.final_density_matrix
 
-    def optimize_qaoa(self, x: tuple, *args: tuple) -> float:
-        """Optimization function for QAOA that is compatible with
-            Scipy optimize.
+    def optimize_brute_qaoa(self, x: tuple, *args: tuple) -> float:
+        """Optimization function for QAOA using brute force in Scipy optimize.
 
         Args:
             x (tuple): Variational parameters
@@ -190,6 +189,26 @@ class Circ(object):
         alphas = tuple(x[:middle_index])
         betas = tuple(x[middle_index:])
         device = args[0]
+        rho = self.simulate_qaoa(
+            params=(alphas, betas),
+            device=device
+        )
+        return numpy.trace(self.cost * rho).real
+
+    def optimize_qaoa(self, x: numpy.ndarray, *args: tuple) -> float:
+        """Optimization function for QAOA that is compatible with
+            Scipy optimize.
+
+        Args:
+            x (numpy.ndarray): Variational parameters
+            *args (tuple): Error Channel
+        Returns:
+            float: Expectation value
+        """
+        middle_index = int(len(x) / 2)
+        alphas = tuple(x[:middle_index])
+        betas = tuple(x[middle_index:])
+        device = args[0][0]
         rho = self.simulate_qaoa(
             params=(alphas, betas),
             device=device
