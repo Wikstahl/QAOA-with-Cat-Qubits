@@ -208,7 +208,10 @@ class Circ(object):
         middle_index = int(len(x) / 2)
         alphas = tuple(x[:middle_index])
         betas = tuple(x[middle_index:])
-        device = args[0][0]
+        device = args[0]
+        if type(device) is list:
+            device = device[0]
+        print('DEVICE',device)
         rho = self.simulate_qaoa(
             params=(alphas, betas),
             device=device
