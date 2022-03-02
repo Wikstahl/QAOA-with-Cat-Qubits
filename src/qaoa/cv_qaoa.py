@@ -1,7 +1,7 @@
 import pickle
 import numpy as np
 import networkx as nx
-from scipy.optimize import brute, minimize, Bounds, shgo
+from scipy.optimize import brute, minimize, Bounds, shgo, differential_evolution
 from cvqaoa.circ import Circ
 
 
@@ -75,7 +75,7 @@ for idx in range(30):
         bounds_beta = ((0, np.pi / 2),) * level
         bounds = bounds_gamma + bounds_beta
         # find the optimal angles
-        res = shgo(circ.optimize_qaoa, bounds, args=(["CV"]))
+        res = differential_evolution(circ.optimize_qaoa, bounds, args=(["CV"]))
 
     # Save results
     filename = path + f"qaoa_parameters_cv_level_{level}"
