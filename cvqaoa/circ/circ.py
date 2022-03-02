@@ -211,7 +211,6 @@ class Circ(object):
         device = args[0]
         if type(device) is list:
             device = device[0]
-        print('DEVICE',device)
         rho = self.simulate_qaoa(
             params=(alphas, betas),
             device=device
