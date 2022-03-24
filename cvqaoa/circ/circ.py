@@ -123,10 +123,8 @@ class Circ(object):
                 )
                 if device == "DV":
                     circuit.append(DVZZChannel(alpha)(qubits[u], qubits[v]))
-                elif device == "CV":
+                if device == "CV":
                     circuit.append(CVZZChannel()(qubits[u], qubits[v]))
-                else:
-                    raise "Unknown device"
 
             circuit.append(
                 cirq.Moment(
@@ -139,7 +137,7 @@ class Circ(object):
             )
             if device == "DV":
                 circuit.append(DVRXChannel(beta).on_each(*qubits))
-            elif device == "CV":
+            if device == "CV":
                 circuit.append(CVRXChannel(beta).on_each(*qubits))
 
         return circuit
