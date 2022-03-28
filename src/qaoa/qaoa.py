@@ -69,7 +69,7 @@ for idx in range(30):
         res = pickle.load(
             open(path + f"qaoa_parameters_level_{level-1}", "rb"))
         # use interpolation method
-        x0 = interpolation(res[0])
+        # x0 = interpolation(res[0])
         # define bounds
         bounds_gamma = ((0, np.pi),) * level
         bounds_beta = ((0, np.pi / 2),) * level

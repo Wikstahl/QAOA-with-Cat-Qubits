@@ -46,7 +46,7 @@ def interpolation(x0):
 
 
 # pick a level p that you want to optimize
-level = 2
+level = 3
 
 # Loop over all instances
 for idx in range(30):
@@ -69,7 +69,7 @@ for idx in range(30):
         res_cv = pickle.load(
             open(path + f"qaoa_parameters_cv_level_{level-1}", "rb"))
         # use interpolation method
-        x0 = interpolation(res_cv[0])
+        #x0 = interpolation(res_cv[0])
         # define bounds
         bounds_gamma = ((0, np.pi),) * level
         bounds_beta = ((0, np.pi / 2),) * level
