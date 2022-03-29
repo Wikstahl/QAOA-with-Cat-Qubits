@@ -6,7 +6,6 @@ from scipy.optimize import brute, minimize, Bounds, shgo, differential_evolution
 from scipy import optimize
 import multiprocessing
 from cvqaoa.circ import Circ
-from cvqaoa.circ.optimization import multistart
 
 
 def interpolation(x0):
@@ -71,8 +70,8 @@ for idx in range(30):
     # Use Multistart for level > 1
     if level > 1:
         # lower and upper bounds
-        bounds_gamma = ((0, numpy.pi),) * level
-        bounds_beta = ((0, numpy.pi / 2),) * level
+        bounds_gamma = ((0, np.pi),) * level
+        bounds_beta = ((0, np.pi / 2),) * level
         bounds = bounds_gamma + bounds_beta
 
         def minimize(x0):
@@ -84,9 +83,9 @@ for idx in range(30):
             return res
 
         startpoints = 100
-        betas = numpy.pi * numpy.random.uniform(size=(startpoints,level)) / 2
-        alphas = numpy.arccos(2 * numpy.random.uniform(size=(startpoints,level)) - 1)
-        x0 = numpy.hstack((alphas,betas))
+        betas = np.pi * np.random.uniform(size=(startpoints,level)) / 2
+        alphas = np.arccos(2 * np.random.uniform(size=(startpoints,level)) - 1)
+        x0 = np.hstack((alphas,betas))
 
         if __name__ == '__main__':
             multiprocessing.freeze_support()
@@ -107,7 +106,7 @@ for idx in range(30):
             file_exists = exists(path_to_file)
             if file_exists:
                 # load the file
-                with open(path_to_file) as pickle_file:
+                with open(path_to_file, "rb") as pickle_file:
                     results = pickle.load(pickle_file)
                 # check if the new optimal angles give a better cost
                 if res.fun < results.fun:
