@@ -46,7 +46,7 @@ def interpolation(x0):
 
 
 # pick a level p that you want to optimize
-level = 3
+level = 1
 
 # Loop over all instances
 for idx in range(30):
