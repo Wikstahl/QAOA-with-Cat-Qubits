@@ -49,7 +49,7 @@ def interpolation(x0):
     return np.array([gamma0, beta0]).flatten()
 
 # pick a level p that you want to optimize
-level = 2
+level = 1
 
 # Loop over all instances
 for idx in range(30):
@@ -68,11 +68,15 @@ for idx in range(30):
         # Brute force on 100 x 100 grid
         res = brute(circ.optimize_brute_qaoa, ranges, args=(["CV"]), Ns=100,
                     full_output=True, finish=None, workers=-1)
+        # Save results
+        filename = path + f"qaoa_parameters_cv_level_{level}"
+        with open(filename, 'wb') as f:
+            pickle.dump(res, f)
     # Use Multistart for level > 1
     if level > 1:
         # lower and upper bounds
-        bounds_gamma = ((0, numpy.pi),) * level
-        bounds_beta = ((0, numpy.pi / 2),) * level
+        bounds_gamma = ((0, np.pi),) * level
+        bounds_beta = ((0, np.pi / 2),) * level
         bounds = bounds_gamma + bounds_beta
 
         def minimize(x0):
@@ -84,9 +88,9 @@ for idx in range(30):
             return res
 
         startpoints = 100
-        betas = numpy.pi * numpy.random.uniform(size=(startpoints,level)) / 2
-        alphas = numpy.arccos(2 * numpy.random.uniform(size=(startpoints,level)) - 1)
-        x0 = numpy.hstack((alphas,betas))
+        betas = np.pi * np.random.uniform(size=(startpoints,level)) / 2
+        alphas = np.arccos(2 * np.random.uniform(size=(startpoints,level)) - 1)
+        x0 = np.hstack((alphas,betas))
 
         if __name__ == '__main__':
             multiprocessing.freeze_support()
