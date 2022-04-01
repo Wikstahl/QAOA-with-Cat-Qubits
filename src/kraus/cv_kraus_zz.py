@@ -4,6 +4,7 @@ from qutip.qip.device import *
 from qutip.qip.operations import *
 from qutip.qip.circuit import QubitCircuit
 from cvqaoa.cvdevice import KPOProcessor
+from forest.benchmarking.operator_tools import *
 from cvqaoa.gates import carb
 
 
@@ -54,46 +55,27 @@ d = 2**N
 
 # Pauli transfer matrix
 R = np.zeros((d**2, d**2))
-R_inv = np.zeros((d**2, d**2))  # Inverse
 
 # Quantum circuit
 qc = QubitCircuit(N=N)
 qc.user_gates = {"CARB": carb}
 qc.add_gate("CARB", targets=[0, 1], arg_value=0)
 
+# Target
+U = (-1j*tensor(sigmaz(),sigmaz())*0/2).expm()
+
 for j in range(d**2):
     result = kpo.run_state(init_state=sigma[j], qc=qc, noisy=True)
-    result_inv = kpo.run_state(init_state=sigma[j], qc=qc, noisy=False)
-
     Lambda = result.states[-1]
-    Lambda_inv = result_inv.states[-1]
 
     for i in range(d**2):
         R[i, j] = 1 / d * ((sigma[i] * Lambda).tr()).real
-        R_inv[i, j] = 1 / d * ((sigma[i] * Lambda_inv).tr()).real
 
 # Find the PTM of the error channel
-ptm_error = R@np.linalg.inv(R_inv)
-# Convert PTM to choi
-choi = 1 / d**2 * sum((ptm_error[i, j] * tensor(P[j].trans(), P[i]))
-                      for i in range(d**2) for j in range(d**2))
-choi.dims = [[[2, 2], [2, 2]], [[2, 2], [2, 2]]]
-choi.superrep = 'choi'
+kraus = pauli_liouville2kraus(R)
+kraus_err = [k@(U.dag()).full() for k in kraus]
+id = sum(np.conj(k.T) @ k for k in kraus_err)
 
-# Find eigenvectors and eigenvalues to choi
-eValues, eVectors = np.linalg.eigh(choi)
-# Because of machine impressision we drop terms smaller than rtol
-rtol = 1e-6
-idx, = np.where(eValues < rtol)
-eVectors = np.delete(eVectors, idx, axis=1)  # drop columns
-eValues = np.delete(eValues, idx)
-num = len(eValues)
-# Get the Kraus operators
-kraus = [np.sqrt(d * eValues[i]) * eVectors[:, i].reshape((d, d))
-         for i in range(num)]
-
-# identity
-id = sum(k@np.conj(k.T) for k in kraus)
 # check that the kraus sum to identity
 if np.isclose(id, np.eye(4), rtol=1e-3, atol=1e-3).all() != True:
     print('Kraus operators must sum to identity')
@@ -101,4 +83,4 @@ if np.isclose(id, np.eye(4), rtol=1e-3, atol=1e-3).all() != True:
 
 # Save results
 file = '../../data/kraus/cv_kraus_zz'
-np.save(file, kraus)
+np.save(file, kraus_err)
