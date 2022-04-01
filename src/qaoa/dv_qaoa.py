@@ -46,7 +46,7 @@ def interpolation(x0):
 
 
 # pick a level p that you want to optimize
-level = 3
+level = 1
 
 # Loop over all instances
 for idx in range(30):
@@ -63,21 +63,59 @@ for idx in range(30):
         # Brute force on 100 x 100 grid
         res = brute(circ.optimize_brute_qaoa, ranges, args=(["DV"]), Ns=100,
                     full_output=True, finish=None, workers=-1)
+        # Save results
+        filename = path + f"qaoa_parameters_dv_level_{level}"
+        with open(filename, 'wb') as f:
+            pickle.dump(res, f)
+    # Use Multistart for level > 1
     if level > 1:
-        ranges = ((0, np.pi), (0, np.pi / 2))
-        # load data
-        res_dv = pickle.load(
-            open(path + f"qaoa_parameters_dv_level_{level-1}", "rb"))
-        # use interpolation method
-        #x0 = interpolation(res_dv[0])
-        # define bounds
+        # lower and upper bounds
         bounds_gamma = ((0, np.pi),) * level
         bounds_beta = ((0, np.pi / 2),) * level
         bounds = bounds_gamma + bounds_beta
-        # find the optimal angles
-        res = differential_evolution(circ.optimize_qaoa, bounds, args=(["DV"]))
 
-    # Save results
-    filename = path + f"qaoa_parameters_dv_level_{level}"
-    with open(filename, 'wb') as f:
-        pickle.dump(res, f)
+        def minimize(x0):
+            # options to the minimizer
+            options = {'disp': None, 'maxcor': 10, 'ftol': 1e-6, 'gtol': 1e-06, 'eps': 1e-05,
+                       'maxfun': 500, 'maxiter': 1000, 'iprint': - 1, 'maxls': 20, 'finite_diff_rel_step': None}
+            res = optimize.minimize(fun, x0, args=(
+                ["DV"]), bounds=bounds, method="L-BFGS-B", options=options)
+            return res
+
+        startpoints = 100
+        betas = np.pi * np.random.uniform(size=(startpoints,level)) / 2
+        alphas = np.arccos(2 * np.random.uniform(size=(startpoints,level)) - 1)
+        x0 = np.hstack((alphas,betas))
+
+        if __name__ == '__main__':
+            multiprocessing.freeze_support()
+            with multiprocessing.Pool() as pool:
+                res_list = pool.map(minimize, x0)
+            # Look for the global minimum in the list of results
+            fmin = 0
+            optimal_idx = -1
+            for idx, elem in enumerate(res_list):
+                if elem.fun < fmin:
+                    fmin = elem.fun
+                    optimal_idx = idx
+            # this is the best result
+            res = res_list[optimal_idx]
+
+            # check if file already exists
+            path_to_file = path + f"qaoa_parameters_dv_level_{level}"
+            file_exists = exists(path_to_file)
+            if file_exists:
+                # load the file
+                with open(path_to_file) as pickle_file:
+                    results = pickle.load(pickle_file)
+                # check if the new optimal angles give a better cost
+                if res.fun < results.fun:
+                    # overwrite the old results
+                    filename = path + f"qaoa_parameters_dv_level_{level}"
+                    with open(filename, 'wb') as f:
+                        pickle.dump(res, f)
+            else:
+                # Save results
+                filename = path + f"qaoa_parameters_dv_level_{level}"
+                with open(filename, 'wb') as f:
+                    pickle.dump(res, f)

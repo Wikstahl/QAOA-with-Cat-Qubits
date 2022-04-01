@@ -48,7 +48,7 @@ def interpolation(x0):
     return np.array([gamma0, beta0]).flatten()
 
 # pick a level p that you want to optimize
-level = 2
+level = 1
 
 # Loop over all instances
 for idx in range(30):
@@ -67,6 +67,10 @@ for idx in range(30):
         # Brute force on 100 x 100 grid
         res = brute(circ.optimize_brute_qaoa, ranges, args=(["CV"]), Ns=100,
                     full_output=True, finish=None, workers=-1)
+        # Save results
+        filename = path + f"qaoa_parameters_cv_level_{level}"
+        with open(filename, 'wb') as f:
+            pickle.dump(res, f)
     # Use Multistart for level > 1
     if level > 1:
         # lower and upper bounds
