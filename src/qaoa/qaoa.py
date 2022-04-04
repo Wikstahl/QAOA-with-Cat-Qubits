@@ -52,6 +52,7 @@ level = 2
 
 # Loop over all instances
 for idx in range(30):
+    print(idx)
     # Path
     path = "../../data/instances/max_cut_" + str(idx) + "/"
     # Load graph from path
@@ -82,7 +83,7 @@ for idx in range(30):
                 ["NoiseFree"]), bounds=bounds, method="L-BFGS-B", options=options)
             return res
 
-        startpoints = 15 * level
+        startpoints = 50 * level
         betas = np.pi * np.random.uniform(size=(startpoints,level)) / 2
         alphas = np.arccos(2 * np.random.uniform(size=(startpoints,level)) - 1)
         x0 = np.hstack((alphas,betas))

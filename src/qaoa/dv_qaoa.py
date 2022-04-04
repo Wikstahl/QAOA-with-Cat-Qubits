@@ -60,6 +60,7 @@ for idx in range(30):
         graph = pickle.load(pickle_file)
     # Create object
     circ = Circ(graph)
+    fun = circ.optimize_qaoa # optimization function
     if level == 1:
         # Optimization bounds
         ranges = ((0, np.pi), (0, np.pi / 2))
@@ -85,7 +86,7 @@ for idx in range(30):
                 ["DV"]), bounds=bounds, method="L-BFGS-B", options=options)
             return res
 
-        startpoints = 15 * level
+        startpoints = 50 * level
         betas = np.pi * np.random.uniform(size=(startpoints,level)) / 2
         alphas = np.arccos(2 * np.random.uniform(size=(startpoints,level)) - 1)
         x0 = np.hstack((alphas,betas))
