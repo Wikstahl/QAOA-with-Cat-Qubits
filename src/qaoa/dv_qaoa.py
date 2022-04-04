@@ -2,6 +2,7 @@ import pickle
 import numpy as np
 import networkx as nx
 from scipy.optimize import brute, minimize, Bounds, shgo, differential_evolution
+import multiprocessing
 from cvqaoa.circ import Circ
 
 
