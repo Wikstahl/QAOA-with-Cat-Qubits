@@ -89,7 +89,7 @@ for idx in range(30):
 
         if __name__ == '__main__':
             multiprocessing.freeze_support()
-            with multiprocessing.Pool() as pool:
+            with multiprocessing.Pool(6) as pool:
                 res_list = pool.map(minimize, x0)
             # Look for the global minimum in the list of results
             fmin = 0
