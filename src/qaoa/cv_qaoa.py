@@ -48,10 +48,11 @@ def interpolation(x0):
     return np.array([gamma0, beta0]).flatten()
 
 # pick a level p that you want to optimize
-level = 1
+level = 2
 
 # Loop over all instances
 for idx in range(30):
+    print(idx)
     # Path
     path = "../../data/instances/max_cut_" + str(idx) + "/"
     # Load graph from path
@@ -81,12 +82,12 @@ for idx in range(30):
         def minimize(x0):
             # options to the minimizer
             options = {'disp': None, 'maxcor': 10, 'ftol': 1e-6, 'gtol': 1e-06, 'eps': 1e-05,
-                       'maxfun': 500, 'maxiter': 1000, 'iprint': - 1, 'maxls': 20, 'finite_diff_rel_step': None}
+                       'maxfun': 500, 'maxiter': 500, 'iprint': - 1, 'maxls': 20, 'finite_diff_rel_step': None}
             res = optimize.minimize(fun, x0, args=(
                 ["CV"]), bounds=bounds, method="L-BFGS-B", options=options)
             return res
 
-        startpoints = 100
+        startpoints = 15 * level
         betas = np.pi * np.random.uniform(size=(startpoints,level)) / 2
         alphas = np.arccos(2 * np.random.uniform(size=(startpoints,level)) - 1)
         x0 = np.hstack((alphas,betas))
@@ -104,22 +105,13 @@ for idx in range(30):
                     optimal_idx = idx
             # this is the best result
             res = res_list[optimal_idx]
+            # calculate the trace of the output
+            xmin = res.x
+            params = tuple(xmin[:level]), tuple(xmin[level:])
+            rho = circ.simulate_qaoa(params,device="CV")
+            res["trace"] = np.trace(rho).real
 
-            # check if file already exists
-            path_to_file = path + f"qaoa_parameters_cv_level_{level}"
-            file_exists = exists(path_to_file)
-            if file_exists:
-                # load the file
-                with open(path_to_file, "rb") as pickle_file:
-                    results = pickle.load(pickle_file)
-                # check if the new optimal angles give a better cost
-                if res.fun < results.fun:
-                    # overwrite the old results
-                    filename = path + f"qaoa_parameters_cv_level_{level}"
-                    with open(filename, 'wb') as f:
-                        pickle.dump(res, f)
-            else:
-                # Save results
-                filename = path + f"qaoa_parameters_cv_level_{level}"
-                with open(filename, 'wb') as f:
-                    pickle.dump(res, f)
+            # Save results
+            filename = path + f"qaoa_parameters_cv_level_{level}"
+            with open(filename, 'wb') as f:
+                pickle.dump(res, f)
