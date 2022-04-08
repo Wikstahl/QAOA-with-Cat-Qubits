@@ -1,5 +1,6 @@
 import pickle
 import numpy as np
+from os.path import exists
 import networkx as nx
 from scipy.optimize import brute, minimize, Bounds, shgo, differential_evolution
 from scipy import optimize
@@ -48,7 +49,7 @@ def interpolation(x0):
 
 
 # pick a level p that you want to optimize
-level = 2
+level = 3
 
 # Loop over all instances
 for idx in range(30):
@@ -86,10 +87,18 @@ for idx in range(30):
                 ["DV"]), bounds=bounds, method="L-BFGS-B", options=options)
             return res
 
-        startpoints = 50 * level
+        startpoints = 1# 50 * level
         betas = np.pi * np.random.uniform(size=(startpoints,level)) / 2
         alphas = np.arccos(2 * np.random.uniform(size=(startpoints,level)) - 1)
+        # Append the optimal nosie free parameters as a starting point
+        with open(path + f"qaoa_parameters_level_{level}", 'rb') as pickle_file:
+            opt = pickle.load(pickle_file)
+        xmin = opt.x
+        #x0 = xmin
         x0 = np.hstack((alphas,betas))
+        x0 = np.vstack((x0, xmin))
+
+        #x0 = np.hstack((alphas,betas))
 
         if __name__ == '__main__':
             multiprocessing.freeze_support()

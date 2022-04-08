@@ -48,7 +48,7 @@ def interpolation(x0):
     return np.array([gamma0, beta0]).flatten()
 
 # pick a level p that you want to optimize
-level = 2
+level = 4
 
 # Loop over all instances
 for idx in range(30):
@@ -87,14 +87,22 @@ for idx in range(30):
                 ["CV"]), bounds=bounds, method="L-BFGS-B", options=options)
             return res
 
-        startpoints = 50 * level
+        startpoints = 1 #50 * 2**level
         betas = np.pi * np.random.uniform(size=(startpoints,level)) / 2
         alphas = np.arccos(2 * np.random.uniform(size=(startpoints,level)) - 1)
+        # Append the optimal nosie free parameters as a starting point
+        with open(path + f"qaoa_parameters_level_{level}", 'rb') as pickle_file:
+            opt = pickle.load(pickle_file)
+        xmin = opt.x
+        #x0 = xmin
         x0 = np.hstack((alphas,betas))
+        x0 = np.vstack((x0, xmin))
+        #x0 = np.append(x0,xmin)
 
+        #print(x0)
         if __name__ == '__main__':
             multiprocessing.freeze_support()
-            with multiprocessing.Pool(6) as pool:
+            with multiprocessing.Pool(1) as pool:
                 res_list = pool.map(minimize, x0)
             # Look for the global minimum in the list of results
             fmin = 0
