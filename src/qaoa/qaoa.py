@@ -48,7 +48,7 @@ def interpolation(x0):
     return np.array([gamma0, beta0]).flatten()
 
 # pick a level p that you want to optimize
-level = 2
+level = 5
 
 # Loop over all instances
 for idx in range(30):
@@ -83,7 +83,7 @@ for idx in range(30):
                 ["NoiseFree"]), bounds=bounds, method="L-BFGS-B", options=options)
             return res
 
-        startpoints = 50 * level
+        startpoints = 50 * 2**level
         betas = np.pi * np.random.uniform(size=(startpoints,level)) / 2
         alphas = np.arccos(2 * np.random.uniform(size=(startpoints,level)) - 1)
         x0 = np.hstack((alphas,betas))
