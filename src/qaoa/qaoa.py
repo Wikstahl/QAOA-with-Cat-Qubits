@@ -83,14 +83,19 @@ for idx in range(30):
                 ["NoiseFree"]), bounds=bounds, method="L-BFGS-B", options=options)
             return res
 
-        startpoints = 50 * 2**level
+        # Load level - 1 optimal angles
+        with open(path +  f"qaoa_parameters_level_{level-1}", 'rb') as pickle_file:
+            prev_res = pickle.load(pickle_file)
+        xGuess = interpolation(prev_res.x)
+        startpoints = 2#50 * 2**level
         betas = np.pi * np.random.uniform(size=(startpoints,level)) / 2
         alphas = np.arccos(2 * np.random.uniform(size=(startpoints,level)) - 1)
         x0 = np.hstack((alphas,betas))
+        x0 = np.vstack((x0,xGuess))
 
         if __name__ == '__main__':
             multiprocessing.freeze_support()
-            with multiprocessing.Pool(6) as pool:
+            with multiprocessing.Pool(12) as pool:
                 res_list = pool.map(minimize, x0)
             # Look for the global minimum in the list of results
             fmin = 0
@@ -101,8 +106,11 @@ for idx in range(30):
                     optimal_idx = idx
             # this is the best result
             res = res_list[optimal_idx]
-
-            # Save results
-            filename = path + f"qaoa_parameters_level_{level}"
-            with open(filename, 'wb') as f:
-                pickle.dump(res, f)
+            # see if the new angles are better
+            with open(path +  f"qaoa_parameters_level_{level}", 'rb') as pickle_file:
+                prev_res = pickle.load(pickle_file)
+            if res.fun < prev_res.fun:
+                # Save results
+                filename = path + f"qaoa_parameters_level_{level}"
+                with open(filename, 'wb') as f:
+                    pickle.dump(res, f)
