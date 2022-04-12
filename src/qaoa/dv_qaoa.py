@@ -49,7 +49,7 @@ def interpolation(x0):
 
 
 # pick a level p that you want to optimize
-level = 3
+level = 5
 
 # Loop over all instances
 for idx in range(30):
@@ -97,6 +97,11 @@ for idx in range(30):
         #x0 = xmin
         x0 = np.hstack((alphas,betas))
         x0 = np.vstack((x0, xmin))
+
+        with open(path +  f"qaoa_parameters_dv_level_{level-1}", 'rb') as pickle_file:
+            prev_res = pickle.load(pickle_file)
+        xGuess = interpolation(prev_res.x)
+        x0 = np.vstack((x0,xGuess))
 
         #x0 = np.hstack((alphas,betas))
 
