@@ -7,7 +7,7 @@ from cvqaoa import KPOProcessor
 from cvqaoa.gates import carb
 
 # KPO parameters
-kpo = KPOProcessor(N=2,num_lvl=20)
+kpo = KPOProcessor(N=2,num_lvl=20,gamma=0)
 alpha = kpo._paras['Coherent state']
 num_lvl = kpo._paras['Cut off']
 
@@ -64,4 +64,4 @@ for i, arg in enumerate(arg_list):
             F += (target_state * final_state).tr().real
     avg_fid.append((F + d**2) / (d**2*(d+1)))
     print(avg_fid)
-np.savez('../../data/average_gate_fidelity/cv_avg_fid_zz.npz', args=arg_list, avg=avg_fid)
+np.savez('../../data/average_gate_fidelity/cv_no_noise_avg_fid_zz.npz', args=arg_list, avg=avg_fid)

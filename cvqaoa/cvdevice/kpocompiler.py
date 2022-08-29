@@ -85,11 +85,11 @@ class KPOCompiler(GateCompiler):
         Compiler for the RZ gate
         """
         q = gate.targets[0] # target qubit
-        if gate.arg_value >= 0: 
+        if gate.arg_value >= 0:
             phi = gate.arg_value % (2*np.pi) # argument
         elif gate.arg_value < 0:
             phi = gate.arg_value % (-2*np.pi) # argument
-        index = self.labels.index(r"\sigma^z_%d" % q) # index of control
+        index = self.labels.index(r"Z_%d" % q) # index of control
 
         # Time
         t_total = 2 # total gate time
@@ -138,8 +138,8 @@ class KPOCompiler(GateCompiler):
             phi = args['phi']
             return np.pi*phi/(8*T_g*self.alpha)*np.sin(np.pi*(t-L)/T_g)*(np.heaviside(t-L,0)-np.heaviside(t-(T_g+L),0))
 
-        index1 = self.labels.index((r"\sigma^y_%d" % q))
-        index2 = self.labels.index((r"F_%d" % q))
+        index1 = self.labels.index((r"Y_%d" % q))
+        index2 = self.labels.index((r"G_%d" % q))
 
         # past time
         len_coeff_list = len(np.array(self.coeff_list[index1]).flatten())
@@ -229,7 +229,7 @@ class KPOCompiler(GateCompiler):
             Delta0 = args['Delta0']
             return Delta0 * pow(np.sin(np.pi*t/t_total),2)
 
-        index = self.labels.index(r"\sigma^x_%d" % q)
+        index = self.labels.index(r"X_%d" % q)
         pulse_list = list(Delta(tlist, args = {'Delta0': Delta0}))
 
         # past time
@@ -270,7 +270,7 @@ class KPOCompiler(GateCompiler):
             A = np.pi*Theta/(8*t_total*pow(self.alpha,2)) # amplitude
             return A*np.sin(np.pi*t/t_total)
 
-        index = self.labels.index(r"\sigma^z_%d\sigma^z_%d" % (targets[0], targets[1]))
+        index = self.labels.index(r"Z_%d Z_%d" % (targets[0], targets[1]))
 
 
         len_coeff_list = len(np.array(self.coeff_list[index]).flatten())

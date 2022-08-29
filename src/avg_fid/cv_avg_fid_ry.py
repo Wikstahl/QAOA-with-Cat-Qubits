@@ -32,16 +32,16 @@ sigma = [sigma_x, sigma_y, sigma_z]
 # Init list with average gate fidelities
 avg_fid = []
 # List of angles
-arg_list = np.linspace(-np.pi/2,np.pi/2,20)
+arg_list = np.linspace(0,np.pi,20)
 
 # Loop over the list of angles and calculate the average gate fidelity
 for arg in arg_list:
     # Create quantum circuit
     qc = QubitCircuit(N=1)
-    qc.add_gate("RZ", 0, None, arg)
+    qc.add_gate("RY", 0, None, arg)
 
     # Ideal gate
-    U = (-1j*arg/2*sigma_z).expm()
+    U = (-1j*arg/2*sigma_y).expm()
 
     # Average Gate Fidelity
     F = 0
@@ -53,4 +53,4 @@ for arg in arg_list:
         target_state = U * sigma_k * U.dag()
         F += (target_state * final_state).tr().real
     avg_fid.append(1/2 + 1/12 * F)
-np.savez('../../data/average_gate_fidelity/cv_no_noise_avg_fid_rz.npz', args=arg_list, avg=avg_fid)
+np.savez('../../data/average_gate_fidelity/cv_no_noise_avg_fid_ry.npz', args=arg_list, avg=avg_fid)

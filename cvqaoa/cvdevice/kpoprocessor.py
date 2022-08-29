@@ -34,7 +34,7 @@ class KPOProcessor(Processor):
         in the physical realization, such as laser frequency, detuning etc.
     """
 
-    def __init__(self, N, num_lvl=20, spline_kind="cubic"):
+    def __init__(self, N, num_lvl=20, gamma = 1/1500, spline_kind="cubic"):
 
         self.N = N # Number qubits
         self.num_lvl = num_lvl # Hilbert space dimension
@@ -42,7 +42,7 @@ class KPOProcessor(Processor):
         self.spline_kind = spline_kind
         self.G = 4 # Two photon drive amplitude
         self.alpha = np.sqrt(self.G) # Coherent state amplitude
-        self.gamma = 1/1500 # Single photon loss rate
+        self.gamma = gamma # Single photon loss rate
         self.c_ops = [] # Collapse operators
 
         super(KPOProcessor, self).__init__(self.N, dims=self.dims, spline_kind=self.spline_kind)
@@ -83,22 +83,23 @@ class KPOProcessor(Processor):
             b = tensor([a if m == j else eye for j in range(N)])
 
             # Single photon drive Hamiltonian Z
-            self.add_control(b.dag() + b, targets = list(range(N)), label = (r"\sigma^z_%d" % m))
+            self.add_control(b.dag() + b, targets = list(range(N)), label = (r"Z_%d" % m))
 
             # Single photon drive Hamiltonian Y
-            self.add_control(1j*(b - b.dag()), targets = list(range(N)), label = (r"\sigma^y_%d" % m))
+            self.add_control(1j*(b - b.dag()), targets = list(range(N)), label = (r"Y_%d" % m))
 
             # Two photon drive (TPD) Hamiltonian
-            self.add_control(- self.G * (b.dag()**2 + b**2), label = (r"F_%d" % m))
+            self.add_control(- self.G * (b.dag()**2 + b**2), label = (r"G_%d" % m))
 
             # Detuning
-            self.add_control(- b.dag()*b, targets = list(range(N)), label = (r"\sigma^x_%d" % m))
+            self.add_control(- b.dag()*b, targets = list(range(N)), label = (r"X_%d" % m))
 
             # Qubit Hamiltonian
             H_qubits += - b.dag()**2 * b**2 + self.G * (b.dag()**2 + b**2)
 
             # Collapse operators
-            self.c_ops.append(np.sqrt(self.gamma) * b)
+            if self.gamma != 0:
+                self.c_ops.append(np.sqrt(self.gamma) * b)
 
         self.add_drift(H_qubits, targets = list(range(N)))
 
@@ -109,7 +110,7 @@ class KPOProcessor(Processor):
                 for j in range(i+1,N):
                     b_2 = tensor([a if j == k else eye for k in range(N)])
                     H_cpl = b_1.dag()*b_2 + b_2.dag()*b_1
-                    self.add_control(H_cpl, targets = list(range(N)), label = (r"\sigma^z_%d\sigma^z_%d" % (i,j)))
+                    self.add_control(H_cpl, targets = list(range(N)), label = (r"Z_%d Z_%d" % (i,j)))
 
     def load_circuit(self, qc):
         """
@@ -193,7 +194,7 @@ class KPOProcessor(Processor):
         return super(KPOProcessor, self).run_state(
             init_state=init_state, analytical=analytical,
             states=states, **kwargs)
-    
+
     def run_propagator(self, qc=None, **kwargs):
         """
 

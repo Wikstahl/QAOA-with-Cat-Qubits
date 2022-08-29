@@ -5,7 +5,7 @@ from qutip.qip.circuit import QubitCircuit
 from cvqaoa import *
 
 # KPO parameters
-kpo = KPOProcessor(N=1,num_lvl=20)
+kpo = KPOProcessor(N=1,num_lvl=20,gamma=0)
 alpha = kpo._paras['Coherent state']
 num_lvl = kpo._paras['Cut off']
 
@@ -39,7 +39,7 @@ for arg in arg_list:
     # Create quantum circuit
     qc = QubitCircuit(N=1)
     qc.add_gate("RX", 0, None, arg)
-    
+
     # Ideal gate
     U = (-1j*arg/2*sigma_x).expm()
 
@@ -53,4 +53,4 @@ for arg in arg_list:
         target_state = U * sigma_k * U.dag()
         F += (target_state * final_state).tr().real
     avg_fid.append(1/2 + 1/12 * F)
-np.savez('../../data/average_gate_fidelity/cv_avg_fid_rx.npz', args=arg_list, avg=avg_fid)
+np.savez('../../data/average_gate_fidelity/cv_no_noise_avg_fid_rx.npz', args=arg_list, avg=avg_fid)
