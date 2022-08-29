@@ -64,6 +64,8 @@ def expval(x):
 
 
 ranges = ((0, np.pi), (0, np.pi))
-res = sp.optimize.brute(expval, ranges, Ns=500, full_output=True)
+res = sp.optimize.brute(expval, ranges, Ns=100,
+                        full_output=True, finish=sp.optimize.fmin)
 
-np.save('../../data/trotter/single_ising_spin_1', np.array(res, dtype='object'))
+np.save('../../data/trotter/single_ising_spin_1',
+        np.array(res, dtype='object'))
