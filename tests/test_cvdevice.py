@@ -2,7 +2,7 @@ import numpy as np
 from qutip import *
 from qutip.qip.circuit import QubitCircuit, Gate
 from qutip.qip.operations import *
-from cvqaoa.cvdevice.kpoprocessor import KPOProcessor
+from qaoa_with_cat_qubits.cvdevice.kpoprocessor import KPOProcessor
 
 
 def test_rz():

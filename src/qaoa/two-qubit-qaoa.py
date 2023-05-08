@@ -5,7 +5,7 @@ import numpy as np; pi = np.pi
 from qutip import *
 from qutip.qip.circuit import QubitCircuit
 from qutip.qip.operations import *
-from cvqaoa.cvdevice import KPOProcessor
+from qaoa_with_cat_qubits.cvdevice import KPOProcessor
 from scipy.optimize import minimize
 from matplotlib import cm
 

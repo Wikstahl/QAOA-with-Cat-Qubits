@@ -2,10 +2,10 @@ from qutip import *
 from qutip.qip.device import *
 from qutip.qip.operations import *
 from qutip.qip.circuit import QubitCircuit
-from cvqaoa import *
+from qaoa_with_cat_qubits import *
 
 # KPO parameters
-kpo = KPOProcessor(N=1,num_lvl=20,gamma=0)
+kpo = KPOProcessor(N=1,num_lvl=20)
 alpha = kpo._paras['Coherent state']
 num_lvl = kpo._paras['Cut off']
 
@@ -32,7 +32,7 @@ sigma = [sigma_x, sigma_y, sigma_z]
 # Init list with average gate fidelities
 avg_fid = []
 # List of angles
-arg_list = np.linspace(-np.pi/2,np.pi/2,20)
+arg_list = np.linspace(0,np.pi,20)
 
 # Loop over the list of angles and calculate the average gate fidelity
 for arg in arg_list:
@@ -53,4 +53,4 @@ for arg in arg_list:
         target_state = U * sigma_k * U.dag()
         F += (target_state * final_state).tr().real
     avg_fid.append(1/2 + 1/12 * F)
-np.savez('../../data/average_gate_fidelity/cv_no_noise_avg_fid_rz.npz', args=arg_list, avg=avg_fid)
+np.savez('../../data/average_gate_fidelity/cv_avg_fid_rz.npz', args=arg_list, avg=avg_fid)

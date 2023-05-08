@@ -3,7 +3,7 @@ import scipy as sp
 from qutip import *
 from qutip.qip.operations import *
 from qutip.qip.circuit import QubitCircuit, Gate
-from cvqaoa.cvdevice import KPOProcessor
+from qaoa_with_cat_qubits.cvdevice import KPOProcessor
 
 num_lvl = 20  # Hilbert space cut-off
 a = destroy(num_lvl)  # Annihilation operator
@@ -64,7 +64,7 @@ def expval(x):
 
 
 ranges = ((0, np.pi), (0, np.pi))
-res = sp.optimize.brute(expval, ranges, Ns=100,
+res = sp.optimize.brute(expval, ranges, Ns=200,
                         full_output=True, finish=sp.optimize.fmin)
 
 np.save('../../data/trotter/single_ising_spin_1',

@@ -5,8 +5,8 @@ from qutip import *
 from qutip.qip.device import *
 from qutip.qip.operations import *
 from qutip.qip.circuit import QubitCircuit
-from cvqaoa import *
-from cvqaoa.gates import carb
+from qaoa_with_cat_qubits import *
+from qaoa_with_cat_qubits.gates import carb
 from forest.benchmarking.operator_tools import *
 from forest.benchmarking.operator_tools import *
 from forest.benchmarking.operator_tools.project_superoperators import *

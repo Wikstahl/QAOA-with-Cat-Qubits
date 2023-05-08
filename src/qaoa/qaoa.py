@@ -5,7 +5,7 @@ import networkx as nx
 from scipy.optimize import brute, minimize, Bounds, shgo, differential_evolution
 from scipy import optimize
 import multiprocessing
-from cvqaoa.circ import Circ
+from qaoa_with_cat_qubits.circ import Circ
 
 
 def interpolation(x0):

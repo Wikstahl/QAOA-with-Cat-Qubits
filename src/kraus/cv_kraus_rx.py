@@ -4,7 +4,7 @@ from qutip.qip.device import *
 from qutip.qip.operations import *
 from qutip.qip.circuit import QubitCircuit
 from forest.benchmarking.operator_tools import *
-from cvqaoa.cvdevice import KPOProcessor
+from qaoa_with_cat_qubits.cvdevice import KPOProcessor
 
 # KPO parameters
 kpo = KPOProcessor(N=1, num_lvl=20)

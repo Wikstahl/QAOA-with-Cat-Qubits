@@ -2,10 +2,10 @@ from qutip import *
 from qutip.qip.device import *
 from qutip.qip.operations import *
 from qutip.qip.circuit import QubitCircuit
-from cvqaoa import *
+from qaoa_with_cat_qubits import *
 
 # KPO parameters
-kpo = KPOProcessor(N=1,num_lvl=20,gamma=0)
+kpo = KPOProcessor(N=1,num_lvl=20)
 alpha = kpo._paras['Coherent state']
 num_lvl = kpo._paras['Cut off']
 
@@ -47,7 +47,7 @@ for arg in arg_list:
     F = 0
     for sigma_k in sigma:
         # Master equation
-        result = kpo.run_state(init_state=sigma_k, qc=qc, noisy=True)
+        result = kpo.run_state(init_state=sigma_k, qc=qc, noisy=False)
         final_state = result.states[-1]
         # Target state
         target_state = U * sigma_k * U.dag()

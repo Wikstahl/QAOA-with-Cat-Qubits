@@ -2,7 +2,7 @@ from qutip import *
 from qutip.qip.device import *
 from qutip.qip.operations import *
 from qutip.qip.circuit import QubitCircuit
-from cvqaoa import *
+from qaoa_with_cat_qubits import *
 
 # KPO parameters
 kpo = KPOProcessor(N=1,num_lvl=20,gamma=0)

@@ -3,9 +3,9 @@ from qutip import *
 from qutip.qip.device import *
 from qutip.qip.operations import *
 from qutip.qip.circuit import QubitCircuit
-from cvqaoa.cvdevice import KPOProcessor
+from qaoa_with_cat_qubits.cvdevice import KPOProcessor
 from forest.benchmarking.operator_tools import *
-from cvqaoa.gates import carb
+from qaoa_with_cat_qubits.gates import carb
 
 
 def product(*args, repeat=1):
