@@ -6,3 +6,5 @@ qutip
 networkx
 cirq
 seaborn
+jupyter
+notebook

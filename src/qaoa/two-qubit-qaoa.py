@@ -92,16 +92,18 @@ def cost_fun(x):
 x0 = [0.9046, 2.6893] # Use no noisy angles as initial guess
 res = minimize(cost_fun, x0=x0)
 
-np.save('two-qubit-qaoa-1.npy', res)
+name = 'noisy-two-qubit-qaoa-rx-mixer-level-1'
+np.save('../../data/two_qubit_qaoa/'+name+'.npy', res)
 
 qaoa_level = 1
 xmin = res.x
 alphas = xmin[:qaoa_level]
 betas = xmin[qaoa_level:]
+params = (alphas, betas)
 result = kpo.run_state(init_state = initial_state, qc = qaoa_circuit(params), noisy = True)
 
 final_state = result.states[-1]
-qsave(final_state,'noisy-qaoa-level-1-rx-mixer')
+qsave(final_state,'../../data/'+name)
 
 target_state = tensor(down,up)
 if final_state.type == 'ket':
