@@ -10,6 +10,7 @@ __pycache__/
 figures/
 docs/
 envs/
+*.code-workspace
 
 # C extensions
 *.so
