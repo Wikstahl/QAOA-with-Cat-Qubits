@@ -2,6 +2,7 @@ from typing import Iterable
 import numpy
 import networkx
 import cirq
+from cirq.ops import raw_types
 import os
 
 __all__ = ['CVZZChannel', 'CVRXChannel', 'DVRXChannel', 'DVZZChannel']
@@ -14,7 +15,7 @@ class Location():
         self.loc = '../../data/kraus/'
 
 
-class CVRXChannel(cirq.SingleQubitGate, Location):
+class CVRXChannel(raw_types.Gate, Location):
     def __init__(self, arg: float) -> None:
         super().__init__()
         self.arg = arg % numpy.pi
@@ -56,7 +57,7 @@ class CVRXChannel(cirq.SingleQubitGate, Location):
         return f"CX^{self.arg}"
 
 
-class DVRXChannel(cirq.SingleQubitGate, Location):
+class DVRXChannel(raw_types.Gate, Location):
     def __init__(self, arg: float) -> None:
         super().__init__()
         self.arg = arg % numpy.pi

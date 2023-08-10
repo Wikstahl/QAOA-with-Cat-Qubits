@@ -34,14 +34,14 @@ class KPOProcessor(Processor):
         in the physical realization, such as laser frequency, detuning etc.
     """
 
-    def __init__(self, N, num_lvl=20, gamma = 1/1500, spline_kind="cubic"):
+    def __init__(self, N, num_lvl=20, gamma=1/1500, alpha=2, spline_kind="cubic"):
 
         self.N = N # Number qubits
         self.num_lvl = num_lvl # Hilbert space dimension
         self.dims = [num_lvl] * self.N
         self.spline_kind = spline_kind
-        self.G = 4 # Two photon drive amplitude
-        self.alpha = np.sqrt(self.G) # Coherent state amplitude
+        self.alpha = alpha # Coherent state amplitude
+        self.G = self.alpha**2 # Two photon drive amplitude
         self.gamma = gamma # Single photon loss rate
         self.c_ops = [] # Collapse operators
 

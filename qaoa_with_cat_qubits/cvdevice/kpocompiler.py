@@ -1,5 +1,5 @@
 import numpy as np
-import bisect
+from scipy.optimize import brentq
 
 from qutip.qip.circuit import QubitCircuit, Gate
 from qutip.qip.compiler.gatecompiler import GateCompiler
@@ -166,63 +166,35 @@ class KPOCompiler(GateCompiler):
         num_steps = int(np.ceil(t_total/self.dt)) # number of steps
         tlist = np.linspace(0, t_total, num_steps)
 
-        theta_list =   [0.0,
-                        0.0,
-                        0.0,
-                        0.01755079694742901,
-                        0.05265239084228703,
-                        0.08775398473714505,
-                        0.12285557863200308,
-                        0.19305876642171912,
-                        0.26326195421143517,
-                        0.3510159389485802,
-                        0.47387151758058327,
-                        0.6142778931600154,
-                        0.8073366595817345,
-                        1.0179462229508827,
-                        1.2812081771623178,
-                        1.579571725268611,
-                        1.9130368672697622,
-                        2.3167051970606294,
-                        2.755475120746355,
-                        3.141592653589793]
-
-        Delta_list =   [0.,
-                        0.21052632,
-                        0.42105263,
-                        0.63157895,
-                        0.84210526,
-                        1.05263158,
-                        1.26315789,
-                        1.47368421,
-                        1.68421053,
-                        1.89473684,
-                        2.10526316,
-                        2.31578947,
-                        2.52631579,
-                        2.73684211,
-                        2.94736842,
-                        3.15789474,
-                        3.36842105,
-                        3.57894737,
-                        3.78947368,
-                        4.]
-
-        def find_le(a, x):
-            'Find rightmost value less than or equal to x'
-            i = bisect.bisect_right(a, x)
-            if i:
-                return i
-            raise ValueError
-        z = find_le(theta_list,theta)
-
-        x1 = Delta_list[z-1]
-        x2 = Delta_list[z]
-        y1 = theta_list[z-1]
-        y2 = theta_list[z]
-        y = theta
-        x = (y-y1)*(x2-x1)/(y2-y1)+x1
-        Delta0 = x
+        if self.alpha == 1:
+            # polynomial coeffs
+            z = np.array([-7.32159876e-01, 9.74255497e-01, 4.88620382e-01, 2.88478631e+00, -2.67318215e-03])
+            p = np.poly1d(z) 
+            # Define the function to find the root of
+            def func(x):
+                return p(x) - theta
+            # Find the root using the brentq method, searching in the interval (0, some_large_value)
+            Delta0 = brentq(func, 0, 1)
+        elif self.alpha == 1.36:
+            # polynomial coeffs
+            z = np.array([-0.06546177,  0.18378162,  0.68276231,  0.93738578, -0.00126637])
+            p = np.poly1d(z) 
+            # Define the function to find the root of
+            def func(x):
+                return p(x) - theta
+            # Find the root using the brentq method, searching in the interval (0, some_large_value)
+            Delta0 = brentq(func, 0, 1.6)
+        elif self.alpha == 2:
+            # polynomial coeffs
+            z = np.array([0.0014959, 0.04843742, -0.02898352, 0.06275272, -0.005201])
+            p = np.poly1d(z)
+            # Define the function to find the root of
+            def func(x):
+                return p(x) - theta
+            # Find the root using the brentq method, searching in the interval (0, some_large_value)
+            Delta0 = brentq(func, 0, 4.1)
+        else:
+            raise ValueError("This alpha is not allowed")
 
         # detuning
         def Delta(t,args):

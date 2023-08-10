@@ -2,7 +2,6 @@ import numpy as np
 from qutip import *
 from qutip.qip.device.processor import Processor
 from .qubitcompiler import QubitCompiler
-from .qubitnoise import QubitNoise
 
 __all__ = ['QubitProcessor']
 
@@ -148,7 +147,6 @@ class QubitProcessor(Processor):
 
         if self.c_ops != []:
             kwargs["c_ops"] = self.c_ops
-
         return super(QubitProcessor, self).run_state(
             init_state=init_state, analytical=analytical,
             states=states, **kwargs)
