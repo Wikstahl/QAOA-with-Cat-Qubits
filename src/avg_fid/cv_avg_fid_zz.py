@@ -64,4 +64,4 @@ for i, arg in tqdm(enumerate(arg_list)):
             F += (target_state * final_state).tr().real
     avg_fid.append((F + d**2) / (d**2*(d+1)))
     print(avg_fid)
-np.savez(f'data/average_gate_fidelity/cv_avg_fid_zz_alpha_{alpha}_cutoff_{cutoff}_gamma_{gamma}.npz', args=arg_list, avg=avg_fid)
+np.savez(f'cv_avg_fid_zz_alpha_{alpha}_cutoff_{cutoff}_gamma_{gamma}.npz', args=arg_list, avg=avg_fid)
