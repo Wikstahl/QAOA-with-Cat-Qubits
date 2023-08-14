@@ -15,7 +15,7 @@ def product(*args, repeat=1):
         yield list(prod)
 
 ## KPO parameters
-alpha = 1 # amplitude of coherent state
+alpha = 2 # amplitude of coherent state
 num_lvl = 20 # hilbert space cut off
 N = 2  # number of qubits
 kpo = KPOProcessor(N=N,num_lvl=num_lvl,alpha=alpha)
@@ -82,8 +82,7 @@ for j in tqdm(range(d**2)):
 error_channel = R @ np.linalg.inv(R_ideal)
 
 # Save the result
-loc = "data/ptm/" # location
 name = "ptm_error_channel_rzz_alpha_"+str(alpha)+"_cutoff_"+str(num_lvl)
-file = loc + name
+file = name
 np.save(file, error_channel, allow_pickle=True, fix_imports=True)
 print("success")
