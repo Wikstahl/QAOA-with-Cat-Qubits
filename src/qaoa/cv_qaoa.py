@@ -50,55 +50,55 @@ def interpolation(x0):
     return np.array([gamma0, beta0]).flatten()
 
 # pick a level p that you want to optimize
-level = 1
 alpha = 1.36
 cutoff = 20
 num_qubits = 8
 
-# Loop over all instances
-for idx in tqdm(range(1)):
-    # Path
-    path = f"data/instances/max_cut_{idx}_num_qubits_{num_qubits}/"
-    # Load graph from path
-    with open(path + "graph", 'rb') as pickle_file:
-        graph = pickle.load(pickle_file)
-    # Create object
-    circ = Circ(graph)
-    fun = circ.optimize_qaoa # optimization function
+for level in range(6):
+    # Loop over all instances
+    for idx in tqdm(range(30)):
+        # Path
+        path = f"data/instances/max_cut_{idx}_num_qubits_{num_qubits}/"
+        # Load graph from path
+        with open(path + "graph", 'rb') as pickle_file:
+            graph = pickle.load(pickle_file)
+        # Create object
+        circ = Circ(graph)
+        fun = circ.optimize_qaoa # optimization function
 
-    # Append the optimal nosie free parameters as a starting point
-    with open(path + f"qaoa_parameters_level_{level}", 'rb') as pickle_file:
-        opt = pickle.load(pickle_file)
-    if level == 1:
-        x0 = opt[0]
-    else:
-        xmin = opt.x
-        x0 = xmin
-  
-    # options to the minimizer
-    options = {'disp': None, 'maxcor': 10, 'ftol': 1e-6, 'gtol': 1e-06, 'eps': 1e-05,
-                'maxfun': 500, 'maxiter': 500, 'iprint': - 1, 'maxls': 20, 'finite_diff_rel_step': None}
-        # lower and upper bounds
-    bounds_gamma = ((0, np.pi),) * level
-    bounds_beta = ((0, np.pi / 2),) * level
-    bounds = bounds_gamma + bounds_beta
-    res = optimize.minimize(fun, x0, args=(["CV",alpha,cutoff]), 
-                            bounds=bounds, method="L-BFGS-B", options=options)
+        # Append the optimal nosie free parameters as a starting point
+        with open(path + f"qaoa_parameters_level_{level}", 'rb') as pickle_file:
+            opt = pickle.load(pickle_file)
+        if level == 1:
+            x0 = opt[0]
+        else:
+            xmin = opt.x
+            x0 = xmin
+    
+        # options to the minimizer
+        options = {'disp': None, 'maxcor': 10, 'ftol': 1e-6, 'gtol': 1e-06, 'eps': 1e-05,
+                    'maxfun': 500, 'maxiter': 500, 'iprint': - 1, 'maxls': 20, 'finite_diff_rel_step': None}
+            # lower and upper bounds
+        bounds_gamma = ((0, np.pi),) * level
+        bounds_beta = ((0, np.pi / 2),) * level
+        bounds = bounds_gamma + bounds_beta
+        res = optimize.minimize(fun, x0, args=(["CV",alpha,cutoff]), 
+                                bounds=bounds, method="L-BFGS-B", options=options)
 
-    # calculate the trace of the output
-    xmin = res.x
-    params = tuple(xmin[:level]), tuple(xmin[level:])
-    rho = circ.simulate_qaoa(params,device="CV",amplitude=alpha,cutoff=cutoff)
-    res["trace"] = np.trace(rho).real
-    print("res",res)
-    # Save results
-    filename = f"../../data/instances/max_cut_{idx}_num_qubits_{num_qubits}/qaoa_parameters_cv_level_{level}_alpha_{alpha}_cutoff_{cutoff}"
+        # calculate the trace of the output
+        xmin = res.x
+        params = tuple(xmin[:level]), tuple(xmin[level:])
+        rho = circ.simulate_qaoa(params,device="CV",amplitude=alpha,cutoff=cutoff)
+        res["trace"] = np.trace(rho).real
+        print("res",res)
+        # Save results
+        filename = f"../../data/instances/max_cut_{idx}_num_qubits_{num_qubits}/qaoa_parameters_cv_level_{level}_alpha_{alpha}_cutoff_{cutoff}"
 
 
-    # Ensure the directory exists
-    directory = os.path.dirname(filename)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+        # Ensure the directory exists
+        directory = os.path.dirname(filename)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
 
-    with open(filename, 'wb') as f:
-        pickle.dump(res, f)
+        with open(filename, 'wb') as f:
+            pickle.dump(res, f)
