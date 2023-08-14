@@ -98,7 +98,10 @@ class Circ(object):
 
     def qaoa_circuit(self,
                      params: tuple,
-                     device: str) -> cirq.Circuit:
+                     device: str,
+                     amplitude,
+                     cutoff
+                     ) -> cirq.Circuit:
         """Creates the first iteration of the QAOA circuit
 
         Args:
@@ -122,9 +125,9 @@ class Circ(object):
                     global_shift=-.5)(qubits[u], qubits[v])
                 )
                 if device == "DV":
-                    circuit.append(DVZZChannel(alpha)(qubits[u], qubits[v]))
+                    circuit.append(DVZZChannel(alpha,amplitude,cutoff)(qubits[u], qubits[v]))
                 if device == "CV":
-                    circuit.append(CVZZChannel()(qubits[u], qubits[v]))
+                    circuit.append(CVZZChannel(amplitude,cutoff)(qubits[u], qubits[v]))
 
             circuit.append(
                 cirq.Moment(
@@ -136,15 +139,18 @@ class Circ(object):
                 )
             )
             if device == "DV":
-                circuit.append(DVRXChannel(beta).on_each(*qubits))
+                circuit.append(DVRXChannel(beta,amplitude,cutoff).on_each(*qubits))
             if device == "CV":
-                circuit.append(CVRXChannel(beta).on_each(*qubits))
+                circuit.append(CVRXChannel(beta,amplitude,cutoff).on_each(*qubits))
 
         return circuit
 
     def simulate_qaoa(self,
                       params: tuple,
-                      device: str) -> numpy.ndarray:
+                      device: str,
+                      amplitude,
+                      cutoff
+                      ) -> numpy.ndarray:
         """Simulates the p=1 QAOA circuit of a graph
 
         Args:
@@ -155,7 +161,7 @@ class Circ(object):
             numpy.ndarray: Density matrix output
         """
         alpha, beta = params
-        circuit = self.qaoa_circuit(params, device)
+        circuit = self.qaoa_circuit(params, device, amplitude, cutoff)
 
         # prepare initial state |00...0>
         initial_state = numpy.zeros(2**self.num_nodes)
@@ -186,10 +192,14 @@ class Circ(object):
         middle_index = int(len(x) / 2)
         alphas = tuple(x[:middle_index])
         betas = tuple(x[middle_index:])
-        device = args[0]
+        device = args[0][0]
+        amplitude = args[0][1]
+        cutoff = args[0][2]
         rho = self.simulate_qaoa(
             params=(alphas, betas),
-            device=device
+            device=device,
+            amplitude=amplitude,
+            cutoff=cutoff
         )
         return numpy.trace(self.cost * rho).real
 
@@ -206,11 +216,15 @@ class Circ(object):
         middle_index = int(len(x) / 2)
         alphas = tuple(x[:middle_index])
         betas = tuple(x[middle_index:])
-        device = args[0]
+        device = args[0][0]
+        amplitude = args[0][1]
+        cutoff = args[0][2]
         if type(device) is list:
             device = device[0]
         rho = self.simulate_qaoa(
             params=(alphas, betas),
-            device=device
+            device=device,
+            amplitude=amplitude,
+            cutoff=cutoff
         )
         return numpy.trace(self.cost * rho).real

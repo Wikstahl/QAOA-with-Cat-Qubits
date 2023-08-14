@@ -20,7 +20,7 @@ h = -1*np.array([1/2,0])
 Setup parameters
 """
 N = 2 # Number of qubits in the system
-kpo = KPOProcessor(N = N)
+kpo = KPOProcessor(N = N, alpha=1.36)
 alpha = kpo._paras['Coherent state']
 num_lvl = kpo._paras['Cut off']
 eye = qeye(num_lvl)
