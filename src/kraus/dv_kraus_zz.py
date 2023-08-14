@@ -27,7 +27,10 @@ N = 2  # qubits
 d = 4  # dimension
 tau = 2  # gate time
 # Load the average gate fidelity
-file = np.load('../../data/average_gate_fidelity/cv_avg_fid_zz.npz')
+alpha = 1.36 # optimal alpha
+cutoff = 20
+loss_rate = 1/1500
+file = np.load(f'data/average_gate_fidelity/cv_avg_fid_rzz_alpha_{alpha}_cutoff_{cutoff}_gamma_{loss_rate}.npz')
 f_bar = np.mean(file['avg'])
 # Find the corresponding T1
 gamma = (d + 1) / (d * tau) * (1 - f_bar)
@@ -73,13 +76,6 @@ for idx, arg in enumerate(arg_list):
         for i in range(d**2):
             R[i, j] = 1 / d * ((sigma[i] * Lambda_tot).tr()).real
 
-    # Convert PTM to choi
-    choi = 1 / d**2 * sum((R[i, j] * tensor(sigma[j].trans(), sigma[i]))
-                          for i in range(d**2) for j in range(d**2))
-    choi.dims = [[[2, 2], [2, 2]], [[2, 2], [2, 2]]]
-    choi.superrep = 'choi'
-    choi = choi.full()
-
     # Convert choi to kraus
     kraus = choi2kraus(choi)
     kraus_err = [np.sqrt(d)*k@(U.dag()).full() for k in kraus]
@@ -94,5 +90,5 @@ for idx, arg in enumerate(arg_list):
     kraus_list.append(kraus_err)
 
 # Save results
-file = '../../data/kraus/dv_kraus_zz.npz'
+file = f'data/kraus/dv_kraus_rzz_alpha_{alpha}_cutoff_{cutoff}_gamma_{loss_rate}.npz'
 np.savez(file, args=arg_list, kraus=np.array(kraus_list, dtype=object))

@@ -1,13 +1,17 @@
 import numpy as np
 from qutip import *
 from qutip.qip.device import *
+from tqdm import tqdm
 from qutip.qip.operations import *
 from qutip.qip.circuit import QubitCircuit
 from qaoa_with_cat_qubits import KPOProcessor
 from qaoa_with_cat_qubits.gates import carb
 
 # KPO parameters
-kpo = KPOProcessor(N=2,num_lvl=20,gamma=0)
+cutoff = 20
+alpha = 1.36
+gamma = 1/1500
+kpo = KPOProcessor(N=2,num_lvl=20,alpha=alpha,gamma=gamma)
 alpha = kpo._paras['Coherent state']
 num_lvl = kpo._paras['Cut off']
 
@@ -37,7 +41,7 @@ avg_fid = []
 arg_list = np.linspace(0,np.pi,20)
 
 # Loop over the list of angles and calculate the average gate fidelity
-for i, arg in enumerate(arg_list):
+for i, arg in tqdm(enumerate(arg_list)):
     # Create quantum circuit
     qc = QubitCircuit(N=2)
     qc.user_gates = {"CARB": carb}
@@ -45,10 +49,6 @@ for i, arg in enumerate(arg_list):
 
     # Ideal gate
     U = (-1j*arg*tensor(sigma_z,sigma_z)/2).expm()
-
-    # Progress bar
-    progress = i / len(arg_list)
-    print('%i %%'%(progress))
 
     # Average Gate Fidelity
     d = 4
@@ -64,4 +64,4 @@ for i, arg in enumerate(arg_list):
             F += (target_state * final_state).tr().real
     avg_fid.append((F + d**2) / (d**2*(d+1)))
     print(avg_fid)
-np.savez('../../data/average_gate_fidelity/cv_no_noise_avg_fid_zz.npz', args=arg_list, avg=avg_fid)
+np.savez(f'data/average_gate_fidelity/cv_avg_fid_zz_alpha_{alpha}_cutoff_{cutoff}_gamma_{gamma}.npz', args=arg_list, avg=avg_fid)

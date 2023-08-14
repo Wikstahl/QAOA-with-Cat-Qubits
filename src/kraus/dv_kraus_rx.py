@@ -1,5 +1,5 @@
 import numpy as np
-from qutip import *
+from qutip import sigmax, sigmay, sigmaz, qeye
 from qutip.qip.device import *
 from qutip.qip.operations import *
 from qutip.qip.circuit import QubitCircuit
@@ -9,7 +9,10 @@ from qaoa_with_cat_qubits import *
 d = 2  # dimension
 tau = 10  # gate time
 # Load the average gate fidelity
-file = np.load('../../data/average_gate_fidelity/cv_avg_fid_rx.npz')
+alpha = 1.36 # optimal alpha
+cutoff = 20
+loss_rate = 1/1500
+file = np.load(f'data/average_gate_fidelity/cv_avg_fid_rx_alpha_{alpha}_cutoff_{cutoff}_gamma_{loss_rate}.npz')
 f_bar = np.mean(file['avg'])
 # Find the corresponding T1
 gamma = 2 * (d + 1) / (d * tau) * (1 - f_bar)
@@ -55,10 +58,10 @@ for idx, arg in enumerate(arg_list):
     # check that the kraus sum to identity
     if np.isclose(id, np.eye(2), rtol=1e-4, atol=1e-4).all() != True:
         print(id)
-        raise 'Kraus operators must sum to identity'
+        raise ValueError('Kraus operators must sum to identity')
     # Append kraus to list
     kraus_list.append(kraus_err)
 
 # Save results
-file = '../../data/kraus/dv_kraus_rx.npz'
+file = f'data/kraus/dv_kraus_rx_alpha_{alpha}_cutoff_{cutoff}_gamma_{loss_rate}.npz'
 np.savez(file, args=arg_list, kraus=np.array(kraus_list, dtype=object))
