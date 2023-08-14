@@ -1,6 +1,5 @@
 from typing import Iterable
 import numpy
-import networkx
 import cirq
 from cirq.ops import raw_types
 import os
@@ -16,10 +15,10 @@ class Location():
 
 
 class CVRXChannel(raw_types.Gate, Location):
-    def __init__(self, arg: float) -> None:
+    def __init__(self, arg: float, alpha: float, cutoff: int) -> None:
         super().__init__()
         self.arg = arg % numpy.pi
-        file = self.loc + 'cv_kraus_rx.npz'
+        file = self.loc + f'cv_kraus_rx_alpha_{alpha}_cutoff_{cutoff}.npz'
         data = numpy.load(file, allow_pickle=True, fix_imports=True)
         self.kraus = data['kraus']
         self.arg_list = data['args']
@@ -141,9 +140,9 @@ class DVZZChannel(cirq.Gate, Location):
         return cirq.protocols.CircuitDiagramInfo(wire_symbols=('DZZ', f"DZZ^{self.arg}"))
 
 class CVZZChannel(cirq.Gate, Location):
-    def __init__(self) -> None:
+    def __init__(self, alpha: float, cutoff: int) -> None:
         super().__init__()
-        file = self.loc + 'cv_kraus_zz.npy'
+        file = self.loc + f'cv_kraus_rzz_alpha_{alpha}_cutoff_{cutoff}.npy'
         self.kraus = numpy.load(file)
 
     def num_qubits(self) -> int:

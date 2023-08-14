@@ -9,7 +9,7 @@ def minimize(args):
     fun, x0, bounds, arg = args
     #x0 = numpy.array([x, y])
     res = optimize.minimize(fun, x0, args=arg, bounds=bounds, method="L-BFGS-B", )
-    return r
+    return res
 
 def multistart(fun, bounds=None, startpoints: int = 10, processes=4, args=None):
     # Generating uniformly distributed points on a sphere
