@@ -50,15 +50,15 @@ def interpolation(x0):
     return np.array([gamma0, beta0]).flatten()
 
 # pick a level p that you want to optimize
-alpha = 1.36
+alpha = 2
 cutoff = 20
 num_qubits = 8
 
-for level in range(6):
+for level in range(1,6):
     # Loop over all instances
     for idx in tqdm(range(30)):
         # Path
-        path = f"data/instances/max_cut_{idx}_num_qubits_{num_qubits}/"
+        path = f"../../data/instances/max_cut_{idx}_num_qubits_{num_qubits}/"
         # Load graph from path
         with open(path + "graph", 'rb') as pickle_file:
             graph = pickle.load(pickle_file)
@@ -93,12 +93,6 @@ for level in range(6):
         print("res",res)
         # Save results
         filename = f"../../data/instances/max_cut_{idx}_num_qubits_{num_qubits}/qaoa_parameters_cv_level_{level}_alpha_{alpha}_cutoff_{cutoff}"
-
-
-        # Ensure the directory exists
-        directory = os.path.dirname(filename)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
 
         with open(filename, 'wb') as f:
             pickle.dump(res, f)
