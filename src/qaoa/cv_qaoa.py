@@ -78,7 +78,7 @@ for level in range(1,6):
         # options to the minimizer
         options = {'disp': None, 'maxcor': 10, 'ftol': 1e-6, 'gtol': 1e-06, 'eps': 1e-05,
                     'maxfun': 500, 'maxiter': 500, 'iprint': - 1, 'maxls': 20, 'finite_diff_rel_step': None}
-            # lower and upper bounds
+        # lower and upper bounds
         bounds_gamma = ((0, np.pi),) * level
         bounds_beta = ((0, np.pi / 2),) * level
         bounds = bounds_gamma + bounds_beta

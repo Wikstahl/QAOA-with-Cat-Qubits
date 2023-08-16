@@ -2,13 +2,13 @@
 import numpy as np
 import scipy as sp
 from qutip import *
+from tqdm import tqdm
 from qutip.qip.device import *
 from qutip.qip.operations import *
 from qutip.qip.circuit import QubitCircuit
 from qaoa_with_cat_qubits import *
 from qaoa_with_cat_qubits.gates import carb
-from forest.benchmarking.operator_tools import *
-from forest.benchmarking.operator_tools import *
+from forest.benchmarking.operator_tools import pauli_liouville2kraus
 from forest.benchmarking.operator_tools.project_superoperators import *
 
 
@@ -39,10 +39,10 @@ T1 = 1 / (gamma)
 qp = QubitProcessor(N=N, T1=T1)
 
 # Pauli matrices
-P = [qeye(2), sigmax(), sigmay(), sigmaz()]
+pauli = [qeye(2), sigmax(), sigmay(), sigmaz()]
 
 # Create all tensor products
-sigma = list(map(tensor, product(P, repeat=2)))
+sigma = list(map(tensor, product(pauli, repeat=2)))
 
 # List with angles of rotation
 arg_list = np.linspace(0, np.pi, num=181, endpoint=False)
@@ -50,44 +50,43 @@ arg_list = np.linspace(0, np.pi, num=181, endpoint=False)
 # Initialize kraus list
 kraus_list = []
 
-for idx, arg in enumerate(arg_list):
-    # Pauli transfer matrix
-    R = np.zeros((d**2, d**2))
-
+for idx, arg in tqdm(enumerate(arg_list)):
     # Quantum circuit
     qc = QubitCircuit(N)
     qc.user_gates = {"CARB": carb}
     qc.add_gate("CARB", targets=[0, 1], arg_value=arg)
 
-    # Target
-    U = (-1j*tensor(sigmaz(),sigmaz())*arg/2).expm()
+    # Pauli transfer matrix
+    R = np.zeros((d**2,d**2)) 
+    R_ideal = np.zeros((d**2,d**2))
+
+    # Matrix representation of the ideal quantum circuit
+    U_list = qc.propagators()
+    U = gate_sequence_product(U_list)
 
     # Create PTM
     opt = Options(nsteps=1e6)
     for j in range(d**2):
-        eVals, eVecs = np.linalg.eigh(sigma[j])
-        Lambda_tot = 0
-        for idx, eVal in enumerate(eVals):
-            # Initial state
-            init_state = ket2dm(Qobj(eVecs[:,idx],dims=[[2,2],[1,1]]))
-            # Evolve state
-            result = qp.run_state(init_state=init_state, qc=qc, options=opt)
-            Lambda_tot += eVal * result.states[-1]
+        result = qp.run_state(init_state=sigma[j], qc=qc, options=opt)
+        Lambda = result.states[-1]
+        Lambda_ideal = U * sigma[j] * U.dag()
         for i in range(d**2):
-            R[i, j] = 1 / d * ((sigma[i] * Lambda_tot).tr()).real
+            R[i, j] = 1 / d * ((sigma[i] * Lambda).tr()).real
+            R_ideal[i, j] = 1 / d * ((sigma[i] * Lambda_ideal).tr()).real
+    # Get error channel
+    R_error = R @ np.linalg.inv(R_ideal)
 
     # Convert choi to kraus
-    kraus = choi2kraus(choi)
-    kraus_err = [np.sqrt(d)*k@(U.dag()).full() for k in kraus]
-    id = sum(np.conj(k.T)@k for k in kraus_err)
+    kraus_operators = pauli_liouville2kraus(R_error)
 
+    id = sum(np.conj(k.T)@k for k in kraus_operators)
     # check that the kraus sum to identity
     if np.isclose(id, np.eye(4), rtol=1e-6, atol=1e-3).all() != True:
         print(id)
         print('theta', arg)
-        raise 'Kraus operators must sum to identity'
+        raise ValueError('Kraus operators must sum to identity')
     # Append kraus to list
-    kraus_list.append(kraus_err)
+    kraus_list.append(kraus_operators)
 
 # Save results
 file = f'data/kraus/dv_kraus_rzz_alpha_{alpha}_cutoff_{cutoff}_gamma_{loss_rate}.npz'
