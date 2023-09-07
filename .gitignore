@@ -140,3 +140,5 @@ dmypy.json
 *.code-workspace
 QAOA-with-Cat-Qubits.code-workspace
 examples/graphs/graphs.ipynb
+qaoa_with_cat_qubits/circ/fig-qaoa-new.pdf
+qaoa_with_cat_qubits/fig-qaoa-new.pdf
