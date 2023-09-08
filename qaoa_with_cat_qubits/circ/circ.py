@@ -216,11 +216,11 @@ class Circ(object):
         middle_index = int(len(x) / 2)
         alphas = tuple(x[:middle_index])
         betas = tuple(x[middle_index:])
-        if len(args) == 1:
+        if len(args[0]) == 1:
             device = args[0][0]
             amplitude = 0 
             cutoff = 0
-        else: 
+        else:
             device = args[0][0]
             amplitude = args[0][1]
             cutoff = args[0][2]
