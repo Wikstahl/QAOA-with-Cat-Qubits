@@ -50,11 +50,11 @@ def interpolation(x0):
     return np.array([gamma0, beta0]).flatten()
 
 # pick a level p that you want to optimize
-alpha = 2
+alpha = 1
 cutoff = 20
 num_qubits = 8
 
-for level in range(1,6):
+for level in [6]:
     # Loop over all instances
     for idx in tqdm(range(30)):
         # Path

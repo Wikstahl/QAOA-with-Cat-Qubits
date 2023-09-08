@@ -54,7 +54,7 @@ alpha = 1.36
 cutoff = 20
 num_qubits = 8
 
-for level in range(1,6):
+for level in [6]:
     # Loop over all instances
     for idx in tqdm(range(30)):
         print(idx)

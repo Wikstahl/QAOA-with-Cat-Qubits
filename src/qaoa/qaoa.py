@@ -51,7 +51,7 @@ def interpolation(x0):
 num_qubits = 10
 
 # pick a level p that you want to optimize
-for level in range(1,6+1):
+for level in range(2,6+1):
     # Loop over all instances
     for idx in tqdm(range(30)):
         # Path
@@ -87,7 +87,7 @@ for level in range(1,6+1):
                 ["NoiseFree"]), bounds=bounds, method="L-BFGS-B", options=options)
 
         # Save results
-        filename = f"../../data/instances/max_cut_{idx}_num_qubits_{num_qubits}/qaoa_parameters_{level}"
+        filename = f"../../data/instances/max_cut_{idx}_num_qubits_{num_qubits}/qaoa_parameters_level_{level}"
 
         with open(filename, 'wb') as f:
             pickle.dump(res, f)
