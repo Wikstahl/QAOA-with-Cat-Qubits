@@ -83,7 +83,7 @@ for level in range(2,6+1):
                 xGuess = interpolation(prev_res[0])
             else:
                 xGuess = interpolation(prev_res.x)
-           
+            print('xGuess',xGuess)
             options = {'disp': None, 'maxcor': 10, 'ftol': 1e-6, 'gtol': 1e-06, 'eps': 1e-05,
                     'maxfun': 500, 'maxiter': 500, 'iprint': - 1, 'maxls': 20, 'finite_diff_rel_step': None}
             res = optimize.minimize(fun, xGuess, args=(

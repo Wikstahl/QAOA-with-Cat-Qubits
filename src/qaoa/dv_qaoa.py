@@ -52,9 +52,9 @@ def interpolation(x0):
 # pick a level p that you want to optimize
 alpha = 1.36
 cutoff = 20
-num_qubits = 8
+num_qubits = 10
 
-for level in [6]:
+for level in range(1,6+1):
     # Loop over all instances
     for idx in tqdm(range(30)):
         print(idx)
