@@ -54,9 +54,9 @@ alpha = 1.36
 cutoff = 20
 num_qubits = 10
 
-for level in range(1,6+1):
+for level in [6]:
     # Loop over all instances
-    for idx in tqdm(range(30)):
+    for idx in tqdm(range(10,30)):
         # Path
         path = f"../../data/instances/max_cut_{idx}_num_qubits_{num_qubits}/"
         # Load graph from path
